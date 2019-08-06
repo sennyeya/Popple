@@ -1,5 +1,6 @@
 import React from 'react';
 import config from './config';
+import style from './User.css'
 
 class User extends React.Component{
     text = "";
@@ -14,6 +15,8 @@ class User extends React.Component{
 
         this.onClickText = this.onClickText.bind(this);
         this.onTextChange = this.onTextChange.bind(this);
+
+        this.boxify = this.boxify.bind(this);
     }
 
     componentDidMount(){
@@ -39,18 +42,35 @@ class User extends React.Component{
     render(){
         const {isLoading, error, name} = this.state
         if(isLoading){
-            return <p>Loading...</p>;
+            return this.boxify("Loading...");
         }
         if(error){
-            return <p>Something went wrong</p>;
+            return this.boxify("Something went wrong");
         }
         return (
-        <React.Fragment>
-            <h1>{name}</h1>
-            <input type="text" onChange={this.onTextChange}></input>
-            <button onClick={this.onClickText}></button>
-        </React.Fragment>
+        this.boxify(<>
+            <div className="rows">
+                <div className="columns">
+                    <p>{name}</p>
+                </div>
+                <div className="columns">
+                    <input type="text" onChange={this.onTextChange}></input>
+                    <button onClick={this.onClickText}></button>
+                </div>
+            </div>
+        </>
+        )
         );
+    }
+
+    boxify = function(value){
+        return (
+        <React.Fragment>
+            <div className= "userBox">
+                <h1 className="greeting">Hi!</h1>
+                <h2>{value}</h2>
+            </div>
+        </React.Fragment>);
     }
 
     onTextChange = function(event){
@@ -59,10 +79,7 @@ class User extends React.Component{
     }
 
     onClickText= function(){
-        fetch("http://localhost:5000/users/add/"+this.text, 
-        {
-            method:'POST'
-        })
+        fetch("http://localhost:5000/data/load/")
             .then(response=>{
                 if(!response.ok){
                     throw new Error('Something went wrong');
