@@ -1,0 +1,19 @@
+.userBox {
+    text-align: center;
+    background:linear-gradient(#8360c3,#2ebf91);
+    border-radius: 10px;
+    width:90%;
+    height: 10%;
+    align-content: center;
+    margin:5%;
+}
+
+.input {
+    float:right;
+}
+
+.greeting{
+    background:cyan;
+    border-top-left-radius: 10px;
+    border-top-right-radius: 10px;
+}

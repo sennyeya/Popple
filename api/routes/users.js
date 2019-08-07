@@ -1,9 +1,8 @@
 var express = require('express');
 var db = require('../db');
-var mongoose = require('mongoose');
 var uuid = require('uuid/v4');
 
-var {classSchema,Class} = require('../schema/classSchema');
+var {Class} = require('../schema/class');
 
 var router = express.Router();
 
