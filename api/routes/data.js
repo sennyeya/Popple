@@ -19,14 +19,14 @@ router.post('/generate/:credits', async function(req, res, next){
         throw new Error('Invalid credit form, must be a number.');
     }else{
         await db.connectAndReturn();
-        const plan = await PlanController.generateSemester(req.params.studentId, req.params.credits);
+        const plan = await PlanController.generateSemester(req.params.sId, req.params.credits);
         res.send({plan:plan});
     }
 })
 
 router.post('/plan/:name', async function(req, res, next){
     await db.connectAndReturn();
-    const plan = await PlanController.retrievePlanGraph(req.params.name);
+    const plan = await PlanController.retrievePlanGraph(req.params.name, req.params.sId);
     res.send({tree:plan})
 })
 
