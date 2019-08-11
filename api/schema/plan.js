@@ -4,8 +4,7 @@ var Schema = mongoose.Schema;
 
 var planSchema = new Schema({
     name: String,
-    bottomNodes:[{type:Schema.Types.ObjectId, ref:'plannodes'}],
-    topNodes:[{type:Schema.Types.ObjectId, ref:'plannodes'}],
+    nodes:[{type:Schema.Types.ObjectId, ref:'plannodes'}],
     grouping:[{type:Schema.Types.ObjectId, ref:'flags'}]
 })
 

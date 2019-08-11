@@ -5,7 +5,8 @@ var Schema = mongoose.Schema;
 var studentSchema = new Schema({
     name: String,
     plans:[{type:Schema.Types.ObjectId, ref:'plans'}],
-    completedClasses:[{type:Schema.Types.ObjectId, ref:'classes'}]
+    completedClasses:[{type:Schema.Types.ObjectId, ref:'classes'}],
+    options:[{type:Schema.Types.ObjectId, ref:"plannodes"}]
 })
 
 module.exports.Student = mongoose.model('student',studentSchema)

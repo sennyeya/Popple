@@ -8,4 +8,14 @@ requirementSchema = new Schema({
     flags: [{type:Schema.Types.ObjectId, ref:'flags'}]
 })
 
+var autoPopulate = function(next) {
+    this.populate('classFrom');
+    this.populate('classTo');
+    next();
+};
+
+requirementSchema
+.pre('findOne', autoPopulate)
+.pre('find', autoPopulate)
+
 module.exports.Requirement = mongoose.model('requirements', requirementSchema);
