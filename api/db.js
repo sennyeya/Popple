@@ -2,34 +2,19 @@ var mongoose = require('mongoose');
 var config = require('./config');
 
 var serverUri = config.dbString;
-var connected = false;
+var _db;
 
-module.exports.connect = (callback)=>{
-    if(!connected){
-        mongoose.connect(serverUri, {useNewUrlParser: true});
+module.exports.connect = ()=>{
+    mongoose.connect(serverUri, {useNewUrlParser: true});
 
-        var db = mongoose.connection;
-        
-        db.on('error', console.error.bind(console, 'connection error:'));
-        db.once('open', function(){
-            connected = true;
-        });
-    }
-    callback(db);
-}
-
-module.exports.connectAsync = async (callback)=>{
-    if(!connected){
-        mongoose.connect(serverUri, {useNewUrlParser: true});
-
-        var db = mongoose.connection;
-        
-        db.on('error', console.error.bind(console, 'connection error:'));
-        db.once('open', function(){
-            connected = true;
-        });
-    }
-    await callback(db);
+    var db = mongoose.connection;
+    
+    db.on('error', function(args){
+        console.log(args)
+    });
+    db.once('open', function(){
+        _db = db;
+    });
 }
 
 module.exports.connectAndReturn = ()=>{
@@ -47,4 +32,8 @@ module.exports.connectAndReturn = ()=>{
             resolve(db);
         });
     })
+}
+
+module.exports.getDb = () =>{
+    return _db;
 }

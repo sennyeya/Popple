@@ -1,15 +1,15 @@
 import React from 'react';
 import config from './config';
-import './App.css'
+import './App.css';
+import Loading from './Loading'
 
 class User extends React.Component{
-    text = "";
 
     constructor(props){
         super(props);
         this.state = {
             name : "",
-            isLoading: false,
+            isLoading: true,
             error:false
         }
 
@@ -35,15 +35,11 @@ class User extends React.Component{
 
     render(){
         const {isLoading, error, name} = this.state
-        if(isLoading){
-            return this.boxify("Loading...");
-        }
         if(error){
             return this.boxify("Something went wrong");
+        }else{
+            return isLoading?<Loading/>:this.boxify(name)
         }
-        return (
-            this.boxify(name)
-        );
     }
 
     boxify = function(value){

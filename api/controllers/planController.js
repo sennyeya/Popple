@@ -5,6 +5,7 @@ var {UnmappedReq} = require('../schema/unmapped');
 var {Plan} = require('../schema/plan');
 var {PlanNode} = require('../schema/planNode');
 var {Student} = require('../schema/student');
+var classController = require('./classController');
 
 mongoose.Promise = global.Promise;
 
@@ -532,7 +533,7 @@ returnVisualTree = async function(planNodes, student){
             }
             if(!nodes.some(e=>e.id === map[curNode._id])){
                 const classObj = await Class.findById(curNode.class).exec();
-                if(!isCompleted(curNode, student)){
+                if(!classController.isCompleted(curNode, student)){
                     nodes.push({id:map[curNode._id], label:classObj.name, level:getDepth(curNode), fixed:true});
                 }else if(student.options.includes(curNode)){
                     nodes.push({id:map[curNode._id], label:classObj.name, level:getDepth(curNode), color:"#000000", fixed:true});
@@ -569,6 +570,9 @@ getDepth = function(node){
     return level;
 }
 
-isCompleted = function(node, student){
-    return student.completedClasses.includes(node.class.name);
+// Idea is to use the student information. The options we already generated, combined with the classes that they want to take, to generate a possible solution.
+// If there is no solution then return nothing and will present to user with ?? modal? that there were no results.
+// Will need to be completed after student has been plugged in.
+module.exports.regenerateTree = async function(){
+
 }
