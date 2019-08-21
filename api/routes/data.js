@@ -14,18 +14,23 @@ router.get('/load', async function(req, res, next){
     res.status(200).send();
 })
 
-router.post('/generate/:credits', async function(req, res, next){
-    if(isNaN(req.params.credits)){
-        throw new Error('Invalid credit form, must be a number.');
-    }else{
-        const plan = await PlanController.generateSemester(req.params.sId, req.params.credits);
-        res.send({plan:plan});
-    }
+router.post('/generate/', async function(req, res, next){
+    const plan = await PlanController.generateSemester(req.body.sId);
+    res.send({plan:plan});
 })
 
 router.post('/plan/:name', async function(req, res, next){
-    const plan = await PlanController.retrievePlanGraph(req.params.name, req.params.sId);
+    const plan = await PlanController.retrievePlanGraph(req.params.name, req.body.sId);
     res.send({tree:plan});
+})
+
+router.post('/regenerate', async function(req, res, next){
+    const plan = await PlanController.regenerateTree(req.body.sId, req.body.vals);
+    if(plan.error){
+        res.send({error:plan.error})
+    }else{
+        res.send({plan:plan})
+    }
 })
 
 module.exports = router;
