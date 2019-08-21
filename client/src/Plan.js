@@ -11,17 +11,25 @@ class Plan extends React.Component{
         this.state = {
             options: [],
             selected: [],
-            isLoading:true
+            isLoading:true,
+            sId:this.props.sId
         }
 
         this.onSelect = this.onSelect.bind(this);
-        this.onClassReload = this.onClassReload.bind(this);
     }
 
     componentDidMount(){
-        fetch(config.api+"/data/generate/"+"12", {method:'POST'}).then(data=>data.json()).then(json=>{
+        fetch(config.api+"/data/generate/", 
+        {
+            method:'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({sId: this.state.sId})
+        }).then(data=>data.json()).then(json=>{
             var arr = json['plan']?json['plan']:[];
-            this.setState({options:arr, isLoading:false});
+            this.setState({options:arr, isLoading:false, selected:arr.map(e=>e._id)});
         })
     }
 
@@ -33,10 +41,10 @@ class Plan extends React.Component{
             content = this.state.options?(
             <div>
                 <ul>{this.state.options.map((e, index)=> {
-                    return <PlanItem data={e} keyVal={index} key={index} handleSelect = {this.onSelect} className={this.state.selected.some(l=>l===e.nodeId)?"selected":"unselected"}/>})
+                    return <PlanItem data={e} keyVal={index} key={index} handleSelect = {this.onSelect} className={this.state.selected.some(l=>l===e._id)?"selected":"unselected"}/>})
                     }
                 </ul>
-                <input type="button" onClick={this.onClassReload} value="Regenerate My Plan"></input>
+                <input type="button" onClick={this.onClassReload} id="regenerate" value="Regenerate My Plan"></input>
             </div>):<p>No plans found. Please change your credit count.</p>
         }
         return(
@@ -64,12 +72,31 @@ class Plan extends React.Component{
     }
 
     onClassReload = ()=>{
+        if(this.state.selected.length===this.state.options.length){
+            alert("Please deselect classes to proceed.");
+            return;
+        }
         this.setState({isLoading:true})
-        fetch(config.api+"/data/generate/"+"12", {method:'POST'}).then(data=>data.json()).then(json=>{
+        fetch(config.api+"/data/regenerate/", 
+        {
+            method:'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({sId: this.state.sId, vals:this.state.selected})
+        }).then(data=>data.json()).then(json=>{
+            if(json.error){
+                alert("Could not remove classes, no suitable alternatives found.");
+                this.setState({
+                    isLoading:false
+                });
+                return; 
+            }
             var arr = json['plan']?json['plan']:[];
             this.setState({
                 options:arr, 
-                selected:[], 
+                selected:arr.map(e=>e._id), 
                 isLoading:false
             });
         })

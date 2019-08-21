@@ -4,7 +4,7 @@ import './index.css';
 import LandingPage from './LandingPage';
 import * as serviceWorker from './serviceWorker';
 
-ReactDOM.render(<LandingPage />, document.getElementById('root'));
+ReactDOM.render(<LandingPage id={"5d5b5b04fc3bbe43c4d5fc65"}/>, document.getElementById('root'));
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.

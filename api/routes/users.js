@@ -8,7 +8,7 @@ var router = express.Router();
 
 /* GET users listing. */
 router.get('/test', function(req, res, next) {
-  res.send({name:"Aramis"});
+  res.send({name:"Aramis", id:"5d5b5b04fc3bbe43c4d5fc65"});
 });
 
 router.get('/all', function(req, res, next) {

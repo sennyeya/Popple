@@ -1,14 +1,13 @@
 import React from 'react';
-import { thisTypeAnnotation } from '@babel/types';
 
 class PlanItem extends React.Component{
     constructor(props){
         super(props);
 
         this.state = {
-            name: props.data.name,
-            credits: props.data.credits,
-            nodeId: props.data.nodeId,
+            name: props.data.class.name,
+            credits: props.data.class.credit,
+            nodeId: props.data._id,
             key: props.keyVal,
             className: props.className
         }

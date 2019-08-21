@@ -10,10 +10,9 @@ class User extends React.Component{
         this.state = {
             name : "",
             isLoading: true,
-            error:false
+            error:false,
+            sId:0
         }
-
-        this.boxify = this.boxify.bind(this);
     }
 
     componentDidMount(){
@@ -25,7 +24,7 @@ class User extends React.Component{
                 return response.json();
             })
             .then(data=>{
-                this.setState({name:data.name, isLoading:false})
+                this.setState({name:data.name, sId:data.id, isLoading:false})
             })
             .catch(err=>{
                 console.log(err);
@@ -34,24 +33,16 @@ class User extends React.Component{
     }
 
     render(){
-        const {isLoading, error, name} = this.state
-        if(error){
-            return this.boxify("Something went wrong");
-        }else{
-            return isLoading?<Loading/>:this.boxify(name)
-        }
-    }
-
-    boxify = function(value){
-        return (
-        <React.Fragment>
-            <div className= "containerBox">
+        return(<>
+            <div className="containerBox">
                 <div className="header">
-                    <h1 className="headerText">Hi, {value}!</h1>
+                    <h1 className="headerText">Hi, {this.state.name}</h1>
                 </div>
-                <p>Welcome to Popple.</p>
+                <div id="canvasContainer">
+                    {this.state.isLoading?<Loading/>:<p>Welcome to Popple</p>}
+                </div>
             </div>
-        </React.Fragment>);
+        </>)
     }
 }
 

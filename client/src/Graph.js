@@ -25,12 +25,21 @@ class GraphItem extends React.Component{
         super(props);
         this.state = {
             treeData : [],
-            isLoading:true
+            isLoading:true,
+            sId:this.props.sId
         }
     }
 
     componentDidMount(){
-        fetch(config.api+"/data/plan/CSC", {method:'POST'})
+        fetch(config.api+"/data/plan/CSC", 
+        {
+            method:'POST',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({sId: this.state.sId})
+        })
         .then((response) =>{
             return response.json();
           })

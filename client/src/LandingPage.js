@@ -2,13 +2,14 @@ import React from 'react';
 import User from './User';
 import Graph from './Graph';
 import Plan from './Plan';
+import {config} from './config';
 
 class LandingPage extends React.Component{
     constructor(props){
         super(props);
 
         this.state = {
-
+            sId:props.id
         }
     }
 
@@ -19,10 +20,10 @@ class LandingPage extends React.Component{
                     <User/>
                 </div>
                 <div>
-                    <Plan sId={1}/>
+                    <Plan sId={this.state.sId}/>
                 </div>
                 <div>
-                    <Graph/>
+                    <Graph sId={this.state.sId}/>
                 </div>
             </>
         )

@@ -9,7 +9,7 @@ var classController = require('./classController');
 
 mongoose.Promise = global.Promise;
 
-module.exports.loadClassesAndReqs = function(value){
+module.exports.loadClassesAndReqs = async function(value){
     var classObj = new Class({
         name:value.name,
         credit:3
@@ -142,6 +142,21 @@ module.exports.loadClassesAndReqs = function(value){
             })
             
         })
+    var student = await Student.find({name:"Aramis"}).exec();
+
+    student = student[0]
+
+    student.plans = [(await Plan.find({name:"CSC"}).exec())[0]];
+    student.completedClasses = [
+        (await Class.find({name:"CSC110"}).exec())[0],
+        (await Class.find({name:"CSC120"}).exec())[0],
+        (await Class.find({name:"CSC210"}).exec())[0]
+    ];
+    student.options = [];
+    student.semesterPlan = [];
+    student.desiredCredits = 15;
+
+    await student.save();
 };
 
 tryMerge = async function(set){
@@ -281,22 +296,26 @@ addChildNode = async function(classObj){
     });
 }
 
-module.exports.generateSemester = async function(id, credits){
+module.exports.generateSemester = async function(id){
     // Load student. TODO
-    // const planIds = await Student.findbyId(id).exec();
-    var planIds = "CSC";
-    var student = {plan:"CSC", completedClasses:["CSC110", "CSC120", "CSC210"]}
+    const student = await Student.findById(id).exec();
 
-    var plan = await Plan.find({'name':planIds}).exec();
-
-    var tree = {name:"root", children:[]};
-    for(let topNode of plan[0].nodes){
-        tree.children.push(await PlanNode.findById(topNode).exec());
+    for(let plan of student.plans){
+        var tree = {name:"root", children:[]};
+        for(let topNode of plan.nodes){
+            tree.children.push(await PlanNode.findById(topNode).exec());
+        }
     }
 
     const options = await returnOptions(student, tree);
 
-    plan = await generatePlan(options, credits);
+    student.options = options;
+
+    plan = await generatePlan(options, student.desiredCredits);
+
+    student.semesterPlan = plan;
+
+    await student.save();
 
     return new Promise((resolve, reject)=>{
         resolve(plan);
@@ -317,11 +336,10 @@ recurHelperOptions = async function(student, tree, queue, discovered, options){
         return new Promise((resolve, reject)=>resolve());
     }
     tree = queue.shift();
-    console.log(tree);
     if(await isValidClass(student, tree)){
-        if(!options.some(e=>e.nodeId == tree.id)){
+        if(!options.some(e=>e.id == tree.id)){
             const planNode = await PlanNode.findById(tree.id).exec();
-            options.push({nodeId:tree.id, classId:planNode.class._id, credits:3, name:planNode.class.name}); // TODO: Get the actual credit value.
+            options.push(planNode); // TODO: Get the actual credit value.
         }
     }else{
         for(let child of tree.children){
@@ -340,14 +358,13 @@ isValidClass = async function(student, tree){
     }
 
     // Ensure that the class we are looking at wasnt added from another branch.
-    if(student.completedClasses.includes(tree.class.name)){
+    if(student.completedClasses.includes(tree.class.id)){
         return new Promise((resolve, reject)=>resolve(false));
     }
 
     for(let child of tree.children){
         let req = await Requirement.find({'classFrom':child.id, 'classTo':tree.id});
-        console.log(child.class.name + " : "+!student.completedClasses.includes(child.class.name))
-        if(!student.completedClasses.includes(child.class.name)){
+        if(!student.completedClasses.includes(child.class.id)){
             return new Promise((resolve, reject)=>resolve(false));
         }
 
@@ -377,12 +394,11 @@ generatePlan = async function(options, credits){
 }
 
 recurHelperPlan = async function(options, plan, credits, cushion){
-    console.log(Math.abs(getCreditSum(plan)-credits))
     if(Math.abs(getCreditSum(plan)-credits)==cushion){
         return true;
     }
     for(let option of options){
-        if((getCreditSum(plan)+option.credits)<=credits){
+        if((getCreditSum(plan)+option.class.credit)<=credits){
             plan.push(option)
             if(await recurHelperPlan(options.filter(e=>e!=option), plan, credits, cushion)){
                 return true;
@@ -405,7 +421,7 @@ getCreditSum = function(plan){
 
     var total = 0;
     for(let val of plan){
-        total+=val.credits;
+        total+=val.class.credit;
     }
     return total;
 }
@@ -414,7 +430,7 @@ getCreditSum = function(plan){
 This method ties to an api hook, meant to retrieve the graphic version of the plan for the student.
 */
 module.exports.retrievePlanGraph = async function(name, studentId){
-    var student = {completedClasses:["CSC110", "CSC120", "CSC210"], options:[]}
+    var student = await Student.findById(studentId).exec();
 
     var plan = await Plan.find({'name':name}).exec();
 
@@ -533,12 +549,12 @@ returnVisualTree = async function(planNodes, student){
             }
             if(!nodes.some(e=>e.id === map[curNode._id])){
                 const classObj = await Class.findById(curNode.class).exec();
-                if(!classController.isCompleted(curNode, student)){
-                    nodes.push({id:map[curNode._id], label:classObj.name, level:getDepth(curNode), fixed:true});
-                }else if(student.options.includes(curNode)){
-                    nodes.push({id:map[curNode._id], label:classObj.name, level:getDepth(curNode), color:"#000000", fixed:true});
+                if(classController.isCompleted(curNode, student)){
+                    nodes.push({id:map[curNode._id], label:classObj.name, level:getDepth(curNode),color:"#111111", fixed:true});
+                }else if(student.options.includes(curNode.id)){
+                    nodes.push({id:map[curNode._id], label:classObj.name, level:getDepth(curNode), color:"#aaaaaa", fixed:true});
                 }else{
-                    nodes.push({id:map[curNode._id], label:classObj.name, level:getDepth(curNode), color:"#111111", fixed:true});
+                    nodes.push({id:map[curNode._id], label:classObj.name, level:getDepth(curNode), fixed:true});
                 }
             }
         }
@@ -573,6 +589,19 @@ getDepth = function(node){
 // Idea is to use the student information. The options we already generated, combined with the classes that they want to take, to generate a possible solution.
 // If there is no solution then return nothing and will present to user with ?? modal? that there were no results.
 // Will need to be completed after student has been plugged in.
-module.exports.regenerateTree = async function(){
+module.exports.regenerateTree = async function(id, vals){
+    const student = await Student.findById(id).exec();
+    var options = student.options.filter(e=>vals.includes(e.toString()));
 
+    for(let option in options){
+        options[option] = await PlanNode.findById(options[option]).exec();
+    }
+
+    const plan = await generatePlan(options, student.desiredCredits);
+
+    if(plan.length<student.semesterPlan.length){
+        return {plan:plan, error:"Nothing to replace with"}
+    }
+
+    return plan;
 }
