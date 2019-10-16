@@ -21,4 +21,4 @@ studentSchema
 .pre('find', autoPopulatePlan)
 .pre('findById', autoPopulatePlan)
 
-module.exports.Student = mongoose.model('student',studentSchema)
+module.exports.Student = mongoose.model('students',studentSchema)
