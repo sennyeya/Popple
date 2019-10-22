@@ -5,10 +5,14 @@ var {UnmappedReq} = require('../schema/unmapped');
 var {Plan} = require('../schema/plan');
 var {PlanNode} = require('../schema/planNode');
 var {Student} = require('../schema/student');
-var classController = require('./classController');
+var ClassService = require('../services/classService');
 
 mongoose.Promise = global.Promise;
 
+/*
+Adds the passed in excel spreadsheet to the tree.
+Params: value, the value of a parsed spreadsheet.
+*/
 module.exports.loadClassesAndReqs = async function(value){
     var classObj = new Class({
         name:value.name,
@@ -159,6 +163,11 @@ module.exports.loadClassesAndReqs = async function(value){
     await student.save();
 };
 
+/*
+This method attempts to merge the dataset after a single insert operation that may have inserted two or more
+class nodes that have the same data.
+Params: set, the set of classes.
+*/
 tryMerge = async function(set){
     for(let parentClass of set){
         const nodes = await PlanNode.find({'class':parentClass}).exec();
@@ -196,6 +205,10 @@ tryMerge = async function(set){
     })
 }
 
+/*
+This method returns the child node ids of the passed in set of classes.
+Params: set, a set of classes to return the child nodes from.
+*/
 getChildNodes = async function(set){
     const classSet = await Class.find({'_id':{$in:set}}).populate('requirements').exec();
 
@@ -239,6 +252,11 @@ getChildNodes = async function(set){
     })
 }
 
+/*
+This class updates the children of the passed in node with the passed in id.
+Params: node, the node to get the children from.
+        id, the id of the node to append.
+*/
 updatePlanNode = async function(node, id){
     const newId = await PlanNode.findById(id).exec();
     console.log("updating node "+node.class.name+" with class "+newId.class.name)
@@ -273,6 +291,10 @@ updatePlanNode = async function(node, id){
     });
 }
 
+/*
+This method adds a child node with the value of the passed in obj.
+Params: classObj, a class item.
+*/
 addChildNode = async function(classObj){
     console.log("adding node for "+classObj.name)
 
@@ -296,9 +318,19 @@ addChildNode = async function(classObj){
     });
 }
 
+/*
+This method generates the next semester plan for the student by recursively exploring the tree,
+generating the set of options the student can take and then recursively exploring those options
+to select the best possible fit for the student's desired credit count.
+Params: id, the id of the student.
+*/
 module.exports.generateSemester = async function(id){
     // Load student. TODO
     const student = await Student.findById(id).exec();
+
+    if(!student){
+        throw new Error("No student found with that ID.");
+    }
 
     for(let plan of student.plans){
         var tree = {name:"root", children:[]};
@@ -322,6 +354,11 @@ module.exports.generateSemester = async function(id){
     })
 }
 
+/*
+This method returns the options that the student can take in the next semester.
+Params: student, the student data object.
+        tree, the tree/graph of classes that the student has to complete to graduate.
+*/
 returnOptions = async function(student, tree){
     var options = [];
     var invalidChildren = [];
@@ -331,6 +368,14 @@ returnOptions = async function(student, tree){
     return new Promise((resolve, reject)=>resolve(options));
 }
 
+/*
+This method generates the possible options by doing a breadthfirst recursive search.
+Params: student, the student data object, holds previous class records.
+        tree, the current tree we are operating on.
+        queue, the queue of nodes that we are exploring.
+        discovered, the list of nodes that have been explored.
+        options, the list of results that the student can take.
+*/
 recurHelperOptions = async function(student, tree, queue, discovered, options){
     if(!queue.length){
         return new Promise((resolve, reject)=>resolve());
@@ -352,6 +397,12 @@ recurHelperOptions = async function(student, tree, queue, discovered, options){
     await recurHelperOptions(student, tree, queue, discovered, options);
 }
 
+/*
+This method checks if the student has completed the class contained in the param, tree. 
+This method is not recursive, it merely checks to see if the student already has a record of the class we are looking at.
+Param: student, the student object holding all records of classes taken.
+        tree, the current node that we are trying to decide if the student has taken yet.
+*/
 isValidClass = async function(student, tree){
     if(tree.name == "root"){
         return new Promise((resolve, reject)=>resolve(false));
@@ -380,6 +431,12 @@ isValidClass = async function(student, tree){
     return new Promise((resolve, reject)=>resolve(true));
 }
 
+/*
+This method generates the plan for the desired number of credits from the passed in options. Will return the closest possible
+answer based on credit count.
+Params: options, the set of all class options this student can take.
+        credits, the desired number of credits.
+*/
 generatePlan = async function(options, credits){
     var plan = [];
     var i =0;
@@ -393,6 +450,14 @@ generatePlan = async function(options, credits){
     return new Promise((resolve, reject)=>resolve(plan));
 }
 
+/*
+This method returns the first plan that matches the desired number of credits.
+Params: options, a list of all possible classes this person can take.
+        plan, the array that represents the classes that the student should take in the next semester.
+        credits, the desired number of credits for this semester.
+        cushion, a number that holds the credit cusion that the plan can hold. Will increment on every call,
+                to allow the closest plan to be created.
+*/
 recurHelperPlan = async function(options, plan, credits, cushion){
     if(Math.abs(getCreditSum(plan)-credits)==cushion){
         return true;
@@ -549,7 +614,7 @@ returnVisualTree = async function(planNodes, student){
             }
             if(!nodes.some(e=>e.id === map[curNode._id])){
                 const classObj = await Class.findById(curNode.class).exec();
-                if(classController.isCompleted(curNode, student)){
+                if(ClassService.isCompleted(curNode, student)){
                     nodes.push({id:map[curNode._id], label:classObj.name, level:getDepth(curNode),color:"#111111", fixed:true});
                 }else if(student.options.includes(curNode.id)){
                     nodes.push({id:map[curNode._id], label:classObj.name, level:getDepth(curNode), color:"#aaaaaa", fixed:true});
