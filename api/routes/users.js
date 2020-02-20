@@ -15,4 +15,9 @@ router.get('/all', function(req, res, next) {
   res.send({name:"test"});
 });
 
+router.get("/calendar", (req, res)=>{
+  // Get current calendar for this student. If they have not logged in, prompt them to do so.
+  
+})
+
 module.exports = router;

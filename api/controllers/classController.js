@@ -1,3 +1,4 @@
+const {Class} = require("../schema/class");
 
 module.exports = {
     isCompleted : function(node, student){
@@ -5,7 +6,9 @@ module.exports = {
             return false;
         }
         return student.completedClasses.includes(node.class.id);
-    }
+    },
 
-    
+    addClass: async function(className, classRequirements, credits, equalClasses){
+        await Class.create({name:className, credit:credits, requirements:classRequirements, relevantAlternatives:equalClasses});
+    }
 }

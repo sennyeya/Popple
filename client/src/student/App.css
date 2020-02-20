@@ -1,22 +1,25 @@
 body{
-  background-color: rgb(198, 215, 226);
+  background-color: rgb(105, 108, 110);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif
 }
 
 .containerBox{
   text-align: center;
-  background:rgba(146, 145, 145, 0.781);
-  border-radius: 30px;
+  background:rgba(255, 255, 255, 0.781);
+  border-radius: 12px;
   width:94%;
   height:10%;
-  margin:3%;
+  margin-left:3%;
+  margin-right:3%;
+  margin-bottom:.5%;
+  padding-bottom: .5%;
   align-content: center;
 }
 
 .header{
   background:rgb(141, 12, 12);
-  border-top-left-radius: 30px;
-  border-top-right-radius: 30px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
 }
 
 .headerText{
@@ -24,7 +27,7 @@ body{
 }
 
 #regenerate{
-  background:#ccc;
+  background:rgb(250, 250, 250);
   padding:4px 15px;
   border:0 none;
   cursor:pointer;
@@ -47,7 +50,7 @@ li.unselected{
   margin: 1%;
   padding-left: 1%;
   padding-right: 1%;
-  background:rgba(167, 41, 41, 0.753);
+  background:rgba(161, 2, 2, 0.753);
   border-radius: 30px;
   align-content: center;
 }
@@ -57,7 +60,7 @@ li.selected{
   margin: 1%;
   padding-left: 1%;
   padding-right: 1%;
-  background:rgba(114, 21, 21, 0.753);
+  background:rgba(92, 1, 1, 0.753);
   border-radius: 30px;
   align-content: center;
 }

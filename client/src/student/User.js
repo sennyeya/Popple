@@ -16,7 +16,7 @@ class User extends React.Component{
     }
 
     componentDidMount(){
-        fetch("http://localhost:5000/users/test")
+        fetch(config.api+"/users/test")
             .then(response=>{
                 if(!response.ok){
                     throw new Error('Something went wrong');

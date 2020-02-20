@@ -16,8 +16,11 @@
     "jade": "^1.11.0",
     "mongoose": "^5.6.9",
     "morgan": "~1.9.1",
+    "passport": "^0.4.1",
+    "passport-google-oauth": "^2.0.0",
     "uglify-js": "^3.6.0",
     "uuid": "^3.3.2",
+    "wink-ner": "^2.0.2",
     "xlsx": "^0.15.0"
   },
   "devDependencies": {

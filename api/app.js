@@ -10,9 +10,12 @@ var mongoose = require('mongoose');
 var config = require('./config');
 var db = require('./db');
 
+var passport = require('passport');
+
 var indexRouter = require('./routes/index');
 var usersRouter = require('./routes/users');
 var dataRouter = require('./routes/data');
+var adminRouter = require('./routes/admin')
 
 var app = express();
 db.connect();
@@ -37,6 +40,9 @@ app.use('/data', dataRouter);
 app.use(function(req, res, next) {
   next(createError(404));
 });
+
+// Authenticate requests to admin hook.
+app.use('/admin', adminRouter)
 
 // error handler
 app.use(function(err, req, res, next) {
