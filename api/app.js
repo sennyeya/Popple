@@ -32,7 +32,7 @@ app.use(cookieParser());
 app.use(cors());
 
 // Routes
-app.use('/', indexRouter);
+app.use('/', indexRouter)
 app.use('/users', usersRouter);
 app.use('/data', dataRouter);
 
