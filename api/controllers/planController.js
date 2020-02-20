@@ -16,7 +16,7 @@ Params: value, the value of a parsed spreadsheet.
 module.exports.loadClassesAndReqs = async function(value){
     var classObj = new Class({
         name:value.name,
-        credit:3
+        credit:value.credit
     });
     Class.find({name:value.name},async function(err, res){
         if(res&&res.length){
@@ -669,4 +669,8 @@ module.exports.regenerateTree = async function(id, vals){
     }
 
     return plan;
+}
+
+module.exports.getPlans = async function(){
+    return await Plan.find({}).exec();
 }

@@ -53,7 +53,7 @@ class GraphItem extends React.Component{
             <>
             <div className="containerBox">
                 <div className="header">
-                    <h1 className="headerText">Information</h1>
+                    <h1 className="headerText">Current Plan</h1>
                 </div>
                 <div id="canvasContainer">
                     {this.state.isLoading?<Loading/>:<Graph graph={this.state.treeData} options={options} style={{ height: "600px" }}/>}

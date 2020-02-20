@@ -2,6 +2,7 @@ var express = require('express');
 var xlsx = require('xlsx');
 var db = require('../db');
 var PlanController = require('../controllers/planController');
+var nlpController = require('../controllers/nlpController');
 
 var router = express.Router();
 db.getDb();
@@ -10,16 +11,21 @@ db.getDb();
 This method handles a fake data test load.
 */
 router.get('/load', async function(req, res, next){
-    var workbook = xlsx.readFile('C:/Users/Aramis/Projects/Popple/api/routes/testSheet.xlsx');
+    var workbook = xlsx.readFile('/api/routes/testSheet.xlsx');
     var data = xlsx.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
 
     await PlanController.loadClassesAndReqs(data[0]);
     res.status(200).send();
 })
 
-/*
-This method generates a plan for a student whose ID was passed in the body of the request.
-*/
+router.get('/understand',async function(req, res, next){
+    var workbook = xlsx.readFile('/api/routes/testSheet.xlsx');
+    var data = xlsx.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+
+    await nlpController.learn();
+    res.status(200).send();
+})
+
 router.post('/generate/', async function(req, res, next){
     if(!req.body.sId){
         res.sendStatus(500);
