@@ -1,6 +1,5 @@
 import React from 'react';
 import config from './config';
-import './App.css';
 import Loading from './Loading';
 import { Tab, TabList, TabPanel, Tabs } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
@@ -16,14 +15,19 @@ class CalendarGrid extends React.Component{
     }
 
     render(){
+        if(!this.state.calendars){
+            return(
+                <div><p>No calendars to show.</p></div>
+            )
+        }
         return(<>
             <Tabs>
                 <TabList>
-                    {this.props.calendars.map(e=>{
+                    {this.state.calendars.map(e=>{
                         return <Tab>{e.name}</Tab>
                     })}
                 </TabList>
-                {this.props.calendars.map(e=>{
+                {this.state.calendars.map(e=>{
                     return <CalendarItem elem={e}/>
                 })}
             </Tabs>

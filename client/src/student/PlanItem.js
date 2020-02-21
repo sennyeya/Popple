@@ -1,4 +1,5 @@
 import React from 'react';
+import style from './LandingPage.module.css'
 
 class PlanItem extends React.Component{
     constructor(props){
@@ -18,9 +19,9 @@ class PlanItem extends React.Component{
     render(){
         return (
             <li key={this.state.key} className={this.state.className}>
-                <span className="classTitle">{this.state.name}</span>
-                <span className="credits">{this.state.credits}</span>
-                <input type="button" className="addOrRemove" onClick={this.onSelect} value={this.state.className==="selected"?"Remove Class":"Keep Class"}></input>
+                <span className={style.classTitle}>{this.state.name}</span>
+                <span className={style.credits}>{this.state.credits}</span>
+                <input type="button" className={style.addOrRemove} onClick={this.onSelect} value={this.state.className==="selected"?"Remove Class":"Keep Class"}></input>
             </li>
         )
     }

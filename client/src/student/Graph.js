@@ -3,6 +3,7 @@ import Loading from './Loading'
 import {config} from './config';
 
 import Graph from "react-graph-vis";
+import style from './LandingPage.module.css'
 
 var options = {
     layout: {
@@ -19,6 +20,16 @@ var options = {
     }
 };
 
+const authOptions = 
+{
+    credentials: "include",
+    headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Credentials": true
+    }
+}
+
 class GraphItem extends React.Component{
     
     constructor(props){
@@ -34,28 +45,33 @@ class GraphItem extends React.Component{
         fetch(config.api+"/data/plan/CSC", 
         {
             method:'POST',
+            credentials: 'include',
             headers: {
                 'Accept': 'application/json',
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Credentials': true
             },
             body: JSON.stringify({sId: this.state.sId})
         })
         .then((response) =>{
+            if(!response.ok){
+                throw new Error();
+            }
             return response.json();
           })
           .then((myJson) => {
-            this.setState({treeData:myJson['tree'], isLoading:false})
-          });
+            this.setState({treeData:myJson.tree, isLoading:false})
+          })
     }
 
     render(){
         return(
             <>
-            <div className="containerBox">
-                <div className="header">
-                    <h1 className="headerText">Current Plan</h1>
+            <div className={style.containerBox}>
+                <div className={style.header}>
+                    <h1 className={style.headerText}>Current Plan</h1>
                 </div>
-                <div id="canvasContainer">
+                <div id={style.canvasContainer}>
                     {this.state.isLoading?<Loading/>:<Graph graph={this.state.treeData} options={options} style={{ height: "600px" }}/>}
                 </div>
             </div>

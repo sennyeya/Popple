@@ -1,7 +1,17 @@
 import React from 'react';
 import {config} from './config';
-import './App.css';
 import Loading from './Loading'
+import style from './LandingPage.module.css'
+
+const options = 
+{
+    credentials: "include",
+    headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Credentials": true
+    }
+}
 
 class User extends React.Component{
 
@@ -16,29 +26,25 @@ class User extends React.Component{
     }
 
     componentDidMount(){
-        fetch(config.api+"/users/test")
+        fetch(config.api+"/users/test", options)
             .then(response=>{
                 if(!response.ok){
-                    throw new Error('Something went wrong');
+                    this.props.verify()
                 }
                 return response.json();
             })
             .then(data=>{
                 this.setState({name:data.name, sId:data.id, isLoading:false})
             })
-            .catch(err=>{
-                console.log(err);
-                return this.setState({error:true})
-            })
     }
 
     render(){
         return(<>
-            <div className="containerBox">
-                <div className="header">
-                    <h1 className="headerText">Hi, {this.state.name}</h1>
+            <div className={style.containerBox}>
+                <div className={style.header}>
+                    <h1 className={style.headerText}>Hi, {this.state.name}</h1>
                 </div>
-                <div id="canvasContainer">
+                <div id={style.canvasContainer}>
                     {this.state.isLoading?<Loading/>:<p>Welcome to Popple</p>}
                 </div>
             </div>

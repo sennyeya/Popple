@@ -2,6 +2,7 @@ import React from 'react';
 import Loading from './Loading';
 import PlanItem from './PlanItem';
 import {config} from './config';
+import style from './LandingPage.module.css'
 
 class Plan extends React.Component{
     constructor(props){
@@ -22,9 +23,11 @@ class Plan extends React.Component{
         fetch(config.api+"/data/generate/", 
         {
             method:'POST',
+            credentials: 'include',
             headers: {
                 'Accept': 'application/json',
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                "Access-Control-Allow-Credentials": true
             },
             body: JSON.stringify({sId: this.state.sId})
         }).then(data=>data.json()).then(json=>{
@@ -40,7 +43,7 @@ class Plan extends React.Component{
         }else{
             content = this.state.options?(
             <div>
-                <ul>{this.state.options.map((e, index)=> {
+                <ul className={style.classes}>{this.state.options.map((e, index)=> {
                     return <PlanItem data={e} keyVal={index} key={index} handleSelect = {this.onSelect} className={this.state.selected.some(l=>l===e._id)?"selected":"unselected"}/>})
                     }
                 </ul>
@@ -49,11 +52,11 @@ class Plan extends React.Component{
         }
         return(
             <>
-            <div className="containerBox">
-                <div className="header">
-                    <h1 className="headerText">Plan</h1>
+            <div className={style.containerBox}>
+                <div className={style.header}>
+                    <h1 className={style.headerText}>Plan</h1>
                 </div>
-                <div id="canvasContainer">
+                <div id={style.canvasContainer}>
                     {content}
                 </div>
             </div>
@@ -80,9 +83,11 @@ class Plan extends React.Component{
         fetch(config.api+"/data/regenerate/", 
         {
             method:'POST',
+            credentials: 'include',
             headers: {
                 'Accept': 'application/json',
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Credentials': true
             },
             body: JSON.stringify({sId: this.state.sId, vals:this.state.selected})
         }).then(data=>data.json()).then(json=>{

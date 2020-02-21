@@ -1,8 +1,8 @@
 import React from 'react';
-import config from './config';
-import './App.css';
+import {config} from './config';
 import Loading from './Loading';
-import CalendarGrid from './CalendarGrid'
+import CalendarGrid from './CalendarGrid';
+import style from './LandingPage.module.css'
 
 class Calendar extends React.Component{
     constructor(props){
@@ -16,11 +16,11 @@ class Calendar extends React.Component{
 
     render(){
         return(<>
-            <div className="containerBox">
-                <div className="header">
-                    <h1 className="headerText">Calendars</h1>
+            <div className={style.containerBox}>
+                <div className={style.header}>
+                    <h1 className={style.headerText}>Calendars</h1>
                 </div>
-                <div id="canvasContainer">
+                <div id={style.canvasContainer}>
                     {this.state.isLoading?<Loading/>:<CalendarGrid calendars={this.state.calendars}/>}
                 </div>
             </div>
@@ -28,15 +28,25 @@ class Calendar extends React.Component{
     }
 
     componentDidMount(){
-        fetch(config.api+"/users/calendar", {
-            method:'POST',
+        fetch(config.api+"/users/all", {
+            method:'Get',
+            credentials: 'include',
             headers: {
                 'Accept': 'application/json',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({sId: this.state.sId})
-        }).then(e=>e.json())
-        .then(e=>this.setState({isLoading:false, calendars: e}))
+                'Content-Type': 'application/json',
+                "Access-Control-Allow-Credentials": true
+            }
+        }).then(e=>{
+            if(!e.ok){
+                this.props.verify();
+                throw new Error();
+            }
+            return e.json()
+        })
+        .then(e=>{
+            console.log(e)
+            //this.setState({isLoading:false, calendars: e})
+        })
     }
 }
 

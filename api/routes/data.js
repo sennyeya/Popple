@@ -29,6 +29,7 @@ router.get('/understand',async function(req, res, next){
 router.post('/generate/', async function(req, res, next){
     if(!req.body.sId){
         res.sendStatus(500);
+        return;
     }
     try{
         const plan = await PlanController.generateSemester(req.body.sId);
