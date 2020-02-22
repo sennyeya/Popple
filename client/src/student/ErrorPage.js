@@ -6,7 +6,7 @@ import 'react-tabs/style/react-tabs.css';
 
 class CalendarGrid extends React.Component{
     render(){
-        return(<iframe title={this.props.elem.name} src={this.props.elem.src}></iframe>)
+        return(<p>There has been an error.</p>)
     }
 }
 

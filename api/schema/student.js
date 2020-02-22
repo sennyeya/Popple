@@ -8,7 +8,8 @@ var studentSchema = new Schema({
     completedClasses:[{type:Schema.Types.ObjectId, ref:'classes'}],
     options:[{type:Schema.Types.ObjectId, ref:"plannodes"}],
     semesterPlan:[{type:Schema.Types.ObjectId, ref:'classes'}],
-    desiredCredits:Number
+    desiredCredits:Number,
+    googleId: String
 })
 
 var autoPopulatePlan = function(next) {
