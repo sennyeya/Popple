@@ -4,6 +4,7 @@ import {config} from './config';
 
 import Graph from "react-graph-vis";
 import style from './LandingPage.module.css'
+import PlanQuestionnaire from './PlanQuestionnaire'
 
 var options = {
     layout: {
@@ -35,14 +36,15 @@ class GraphItem extends React.Component{
     constructor(props){
         super(props);
         this.state = {
-            treeData : [],
+            treeData : {},
             isLoading:true,
-            sId:this.props.sId
+            sId:this.props.sId,
+            noResults: false
         }
     }
 
     componentDidMount(){
-        fetch(config.api+"/data/plan/CSC", 
+        fetch(config.api+"/data/plan", 
         {
             method:'POST',
             credentials: 'include',
@@ -60,23 +62,43 @@ class GraphItem extends React.Component{
             return response.json();
           })
           .then((myJson) => {
-            this.setState({treeData:myJson.tree, isLoading:false})
+              console.log(myJson)
+                if(!myJson.tree.length){
+                    this.setState({isLoading:false})
+                }else{
+                    this.setState({treeData:myJson.tree, isLoading:false})
+                }
           })
     }
 
     render(){
-        return(
-            <>
-            <div className={style.containerBox}>
-                <div className={style.header}>
-                    <h1 className={style.headerText}>Current Plan</h1>
+        if(!Object.keys(this.state.treeData).length){
+            return(
+                <>
+                <div className={style.containerBox}>
+                    <div className={style.header}>
+                        <h1 className={style.headerText}>Current Plan</h1>
+                    </div>
+                    <div id={style.canvasContainer}>
+                        {this.state.isLoading?<Loading/>:<PlanQuestionnaire/>}
+                    </div>
                 </div>
-                <div id={style.canvasContainer}>
-                    {this.state.isLoading?<Loading/>:<Graph graph={this.state.treeData} options={options} style={{ height: "600px" }}/>}
+                </>
+            )
+        }else{
+            return(
+                <>
+                <div className={style.containerBox}>
+                    <div className={style.header}>
+                        <h1 className={style.headerText}>Current Plan</h1>
+                    </div>
+                    <div id={style.canvasContainer}>
+                        {this.state.isLoading?<Loading/>:<Graph graph={this.state.treeData} options={options} style={{ height: "600px" }}/>}
+                    </div>
                 </div>
-            </div>
-            </>
-        )
+                </>
+            )
+        }
     }
 }
 
