@@ -18,7 +18,7 @@ class PlanItem extends React.Component{
 
     render(){
         return (
-            <li key={this.state.key} className={this.state.className}>
+            <li key={this.state.key} className={this.state.className==="selected"?style.selected:style.unselected}>
                 <span className={style.classTitle}>{this.state.name}</span>
                 <span className={style.credits}>{this.state.credits}</span>
                 <input type="button" className={style.addOrRemove} onClick={this.onSelect} value={this.state.className==="selected"?"Remove Class":"Keep Class"}></input>

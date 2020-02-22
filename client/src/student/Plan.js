@@ -41,7 +41,7 @@ class Plan extends React.Component{
         if(this.state.isLoading){
             content = <Loading/>
         }else{
-            content = this.state.options?(
+            content = this.state.options.length?(
             <div>
                 <ul className={style.classes}>{this.state.options.map((e, index)=> {
                     return <PlanItem data={e} keyVal={index} key={index} handleSelect = {this.onSelect} className={this.state.selected.some(l=>l===e._id)?"selected":"unselected"}/>})

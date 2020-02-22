@@ -8,17 +8,18 @@ import {
 } from "react-router-dom";
 import LandingPage from './student/LandingPage';
 import TOS from './TOS';
+import style from './App.module.css'
 
 function App() {
   return (
     <Router>
       <div>
         <nav>
-          <ul>
-            <li>
+          <ul className={style.navBarList}>
+            <li className={style.navBarListItem}>
               <Link to="/">Home</Link>
             </li>
-            <li>
+            <li className={style.navBarListItem}>
               <Link to="/tos">Terms of Service</Link>
             </li>
           </ul>
@@ -27,7 +28,7 @@ function App() {
         {/* A <Switch> looks through its children <Route>s and
             renders the first one that matches the current URL. */}
         <Switch>
-          <Route path="/" exact render={(props)=><LandingPage {...props} id="5d5b5b04fc3bbe43c4d5fc65"/>}>
+          <Route path="/" exact render={()=><LandingPage/>}>
           </Route>
           <Route path="/tos" exact render={()=><TOS/>}>
           </Route>

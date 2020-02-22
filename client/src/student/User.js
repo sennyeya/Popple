@@ -18,24 +18,10 @@ class User extends React.Component{
     constructor(props){
         super(props);
         this.state = {
-            name : "",
-            isLoading: true,
+            name : props.name,
             error:false,
             sId:0
         }
-    }
-
-    componentDidMount(){
-        fetch(config.api+"/users/test", options)
-            .then(response=>{
-                if(!response.ok){
-                    this.props.verify()
-                }
-                return response.json();
-            })
-            .then(data=>{
-                this.setState({name:data.name, sId:data.id, isLoading:false})
-            })
     }
 
     render(){
@@ -45,7 +31,7 @@ class User extends React.Component{
                     <h1 className={style.headerText}>Hi, {this.state.name}</h1>
                 </div>
                 <div id={style.canvasContainer}>
-                    {this.state.isLoading?<Loading/>:<p>Welcome to Popple</p>}
+                    <p>Welcome to Popple</p>
                 </div>
             </div>
         </>)

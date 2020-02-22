@@ -4,20 +4,20 @@ var path = require('path');
 var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var cors = require('cors');
-const cookieSession = require('cookie-session')
+const cookieSession = require('cookie-session');
+const {google} = require("googleapis")
 
 // Database connection.
 var mongoose = require('mongoose');
 var config = require('./config');
 var db = require('./db');
-
-var passport = require('passport');
-const passportSetup = require('./services/passportSetup')
+const middleware = require('./services/authSetup');
 
 var usersRouter = require('./routes/users');
 var dataRouter = require('./routes/data');
 var adminRouter = require('./routes/admin');
-var authRouter = require('./routes/auth')
+var authRouter = require('./routes/auth');
+var calendarRouter = require("./routes/calendar")
 
 var app = express();
 db.connect();
@@ -26,31 +26,31 @@ db.connect();
 //app.set('views', path.join(__dirname, 'views'));
 //app.set('view engine', 'jade');
 
+app.use(cookieSession({  name: 'session',  keys: ["asdf"],  maxAge: 24 * 60 * 60 * 1000}));
+
+app.use(middleware.session());
+app.use(middleware.initialize());
+app.use(middleware.setClient);
+
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 //app.use(express.static(path.join(__dirname, 'public')));
-app.use(cors({credentials: true, origin: process.env.NODE_ENV=="development"?'http://localhost:3000':"https://popple-255000.appspot.com"}));
-app.use(cookieSession({  name: 'session',  keys: ["asdf"],  maxAge: 24 * 60 * 60 * 1000}));
-
-// Initialize Passport!  Also use passport.session() middleware, to support
-// persistent login sessions (recommended).
-app.use(passport.initialize());
-app.use(passport.session());
+app.use(cors({credentials: true, origin: [config.FRONTEND_URL, null]}));
 
 // Routes
 app.use('/users', ensureAuthenticated, usersRouter);
 app.use('/data', ensureAuthenticated, dataRouter);
 app.use('/auth', authRouter)
-
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
-});
+app.use('/calendar', ensureAuthenticated, calendarRouter)
 
 // Authenticate requests to admin hook.
 app.use('/admin', ensureAuthenticated, adminRouter)
+
+app.use(function(req, res, next){
+  next(createError(404))
+})
 
 // error handler
 app.use(function(err, req, res, next) {
@@ -71,10 +71,13 @@ app.use(function(err, req, res, next) {
 //   the request will proceed.  Otherwise, the user will be redirected to the
 //   login page.
 function ensureAuthenticated(req, res, next) {
-  if (req.isAuthenticated()) { return next(); }
-  res.status(401).json({
-    message: "UNAUTHORIZED"
-  })
+  if (req.user) {
+      // user is authenticated
+      next();
+  } else {
+      // return unauthorized
+      res.send(401, "Unauthorized");
+  }
 }
 
 module.exports = app;
