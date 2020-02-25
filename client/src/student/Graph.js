@@ -1,6 +1,6 @@
 import React from 'react';
 import Loading from './Loading'
-import {config} from './config';
+import {config, authOptionsPost} from './config';
 
 import Graph from "react-graph-vis";
 import style from './LandingPage.module.css'
@@ -21,16 +21,6 @@ var options = {
     }
 };
 
-const authOptions = 
-{
-    credentials: "include",
-    headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Credentials": true
-    }
-}
-
 class GraphItem extends React.Component{
     
     constructor(props){
@@ -44,17 +34,7 @@ class GraphItem extends React.Component{
     }
 
     componentDidMount(){
-        fetch(config.api+"/data/plan", 
-        {
-            method:'POST',
-            credentials: 'include',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Credentials': true
-            },
-            body: JSON.stringify({sId: this.state.sId})
-        })
+        fetch(config.api+"/data/plan", authOptionsPost(JSON.stringify({sId: this.state.sId})))
         .then((response) =>{
             if(!response.ok){
                 throw new Error();
@@ -63,9 +43,10 @@ class GraphItem extends React.Component{
           })
           .then((myJson) => {
               console.log(myJson)
-                if(!myJson.tree.length){
+                if(!myJson.tree ||!myJson.tree.nodes.length){
                     this.setState({isLoading:false})
                 }else{
+                    console.log(myJson.tree)
                     this.setState({treeData:myJson.tree, isLoading:false})
                 }
           })

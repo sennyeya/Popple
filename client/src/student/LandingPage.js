@@ -3,23 +3,13 @@ import User from './User';
 import Graph from './Graph';
 import Plan from './Plan';
 import LoginPage from './LoginPage'
-import {config} from './config';
+import {config, authOptionsGet} from './config';
 import Loading from './Loading';
 import ErrorPage from './ErrorPage'
 import { Tab, TabList, TabPanel, Tabs } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
 import CalendarView from "./CalendarView";
 import landingPage from './LandingPage.module.css'
-
-const options = 
-{
-    credentials: "include",
-    headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Credentials": true
-    }
-}
 
 class LandingPage extends React.Component{
     constructor(props){
@@ -37,7 +27,7 @@ class LandingPage extends React.Component{
     }
 
     verifyAuthenticated(){
-        fetch(config.api+"/auth/login/status", options).then(e=>{
+        fetch(config.api+"/auth/login/status", authOptionsGet).then(e=>{
             if(!e.ok){
                 throw new Error()
             }
@@ -51,7 +41,7 @@ class LandingPage extends React.Component{
 
     componentDidMount(){
         // Check if the user is logged in.
-        fetch(config.api+"/auth/login/status", options).then(res=>{
+        fetch(config.api+"/auth/login/status", authOptionsGet).then(res=>{
             if(!res.ok){
                 throw new Error();
             }
@@ -63,7 +53,7 @@ class LandingPage extends React.Component{
         })
 
         // Get logged in user data.
-        fetch(config.api+"/users/current", options).then(res=>{
+        fetch(config.api+"/users/current", authOptionsGet).then(res=>{
             if(!res.ok){
                 throw new Error();
             }
@@ -124,7 +114,7 @@ class LandingPage extends React.Component{
                             </Tabs>
                         </TabPanel>
                         <TabPanel>
-                            <iframe src="https://d2l.arizona.edu/d2l/home" width="80%" height="80%"></iframe>
+                            <iframe title="d2l" src="https://d2l.arizona.edu/d2l/home" width="80%" height="80%"></iframe>
                         </TabPanel>
                     </Tabs>
                 </>

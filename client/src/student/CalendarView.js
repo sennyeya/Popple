@@ -1,7 +1,6 @@
 import React from 'react';
-import {config} from './config';
+import {config, authOptionsGet} from './config';
 import Loading from './Loading';
-import CalendarGrid from './CalendarGrid';
 import style from './LandingPage.module.css';
 import { Calendar, momentLocalizer } from 'react-big-calendar'
 import moment from 'moment'
@@ -62,15 +61,7 @@ class CalendarView extends React.Component{
     }
 
     componentDidMount(){
-        fetch(config.api+"/calendar/get", {
-            method:'Get',
-            credentials: 'include',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                "Access-Control-Allow-Credentials": true
-            }
-        }).then(e=>{
+        fetch(config.api+"/calendar/get", authOptionsGet).then(e=>{
             if(!e.ok){
                 this.props.verify();
                 throw new Error();

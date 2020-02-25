@@ -46,7 +46,7 @@ app.use('/auth', authRouter)
 app.use('/calendar', ensureAuthenticated, calendarRouter)
 
 // Authenticate requests to admin hook.
-app.use('/admin', ensureAuthenticated, adminRouter)
+app.use('/admin', ensureAdmin, adminRouter)
 
 app.use(function(req, res, next){
   next(createError(404))
@@ -72,6 +72,21 @@ app.use(function(err, req, res, next) {
 //   login page.
 function ensureAuthenticated(req, res, next) {
   if (req.user) {
+      // user is authenticated
+      next();
+  } else {
+      // return unauthorized
+      res.send(401, "Unauthorized");
+  }
+}
+
+// Simple route middleware to ensure user is authenticated.
+//   Use this route middleware on any resource that needs to be protected.  If
+//   the request is authenticated (typically via a persistent login session),
+//   the request will proceed.  Otherwise, the user will be redirected to the
+//   login page.
+function ensureAdmin(req, res, next) {
+  if (req.user && req.user.isAdmin) {
       // user is authenticated
       next();
   } else {
