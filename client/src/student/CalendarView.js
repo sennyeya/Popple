@@ -7,7 +7,8 @@ import moment from 'moment'
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import {Tabs, TabList, Tab, TabPanel} from 'react-tabs'
 import AsyncSelect from '../shared/AsyncSelect';
-import Button from 'react-bootstrap/Button'
+import Button from '@material-ui/core/Button';
+import Grid from '@material-ui/core/Grid'
 
 const localizer = momentLocalizer(moment);
 
@@ -72,25 +73,39 @@ export default class CalendarGrid extends React.Component{
         super(props);
 
         this.state = {
-            calendars: [],
+            calendars: null,
             added:false,
-            selected:[]
+            selected:null,
+            loading:true
         }
+
+        this._onExternalCalendarClick = this._onExternalCalendarClick.bind(this);
+        this._onInternalCalendarAdd = this._onInternalCalendarAdd.bind(this)
     }
 
     componentDidMount(){
         fetch(config.api+"/calendar/getList", authOptionsGet).then(e=>{
             if(!e.ok){
-
+                
             }
             return e.json();
         }).then(json=>{
-            console.log(json)
-            this.setState({calendars:json})
+            this.setState({calendars:json, loading:!(json&&this.state.selected)})
+        })
+        fetch(config.api+"/calendar/getList", authOptionsGet).then(e=>{
+            if(!e.ok){
+                
+            }
+            return e.json();
+        }).then(json=>{
+            this.setState({selected:json.slice(1), loading:!(json.slice(1)&&this.state.calendars)})
         })
     }
 
     render(){
+        if(this.state.loading){
+            return <div><p>Loading</p></div>
+        }
         if(!this.state.calendars.length){
             return(
                 <div><p>No calendars to show.</p></div>
@@ -113,21 +128,75 @@ export default class CalendarGrid extends React.Component{
                     return <TabPanel><CalendarItem elem={e}/></TabPanel>
                 })}
                 <TabPanel>
-                <AsyncSelect url={()=>{
-                        return fetch(config.api+'/calendar/getLocalOptions', authOptionsGet)
-                    }} 
-                    label="Plan"
-                    multi
-                    onClick={(e,val)=>{
-                        this.setState({selected:val})
-                    }}/>
-                <Button>
-                    
-                </Button>
+                <Grid container spacing={2}>
+                    <Grid item xs={12}>
+                        <Grid container justify="center" spacing={2}>
+                        
+                        <p>This drop down list allows you to add a calendar shared by another student at the University of Arizona to your list of calendars,
+                            with the expectation that this will allow you to add it to your Google calendar list as well.
+                        </p>
+                        <AsyncSelect url={()=>{
+                                return fetch(config.api+'/calendar/getLocalOptions', authOptionsGet)
+                            }} 
+                            label="Add a Calendar"
+                            multi
+                            onClick={(e,val)=>{
+                                this.setState({selected:val})
+                            }}/>
+                        <Button onClick={this._onInternalCalendarAdd}>
+                            Add
+                        </Button>
+                        </Grid>
+                    </Grid>
+                    <Grid item xs={12}>
+                        <Grid container justify="center" spacing={2}>
+                        <p>
+                            This drop down list allows you to add a calendar to a list maintained by Popple that will allow other users to access and read this
+                            calendar.
+                        </p>
+                        <AsyncSelect url={()=>{
+                                return fetch(config.api+'/calendar/getOptions', authOptionsGet)
+                            }} 
+                            value={this.state.selected}
+                            label="Add a Calendar"
+                            multi
+                            onClick={(e,val)=>{
+                                this.setState({selected:val})
+                            }}/>
+                        <Button onClick={this._onExternalCalendarClick}>
+                            Add
+                        </Button>
+                    </Grid>
+                    </Grid>
+                </Grid>
                 </TabPanel>
             </Tabs>
             </div>
         </div>
         </>)
+    }
+
+    _onExternalCalendarClick(){
+        this.setState({loading:true})
+        fetch(config.api+"/calendar/shareCalendar", authOptionsPost(JSON.stringify({id:this.state.selected.map(e=>e.value)}))).then(e=>{
+            if(!e.ok){
+
+            }
+            return e.json()
+        }).then(json=>{
+            this.setState({loading:false})
+        })
+    }
+
+    _onInternalCalendarAdd(){
+        this.setState({loading:true})
+        fetch(config.api+"/calendar/addCalendar", authOptionsPost(JSON.stringify({id:this.state.selected.map(e=>e.value)}))).then(e=>{
+            if(!e.ok){
+
+            }
+            return e.json()
+        }).then(json=>{
+            this.setState({loading:false})
+        })
     }
 }

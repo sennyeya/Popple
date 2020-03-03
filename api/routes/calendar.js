@@ -21,11 +21,25 @@ router.get("/getList", async (req, res)=>{
 });
 
 router.get("/getOptions", async (req, res)=>{
-    res.send(await calendarRepo.getUserCalendars());
+    res.send((await calendarRepo.getUserCalendars()).map((e,i)=>{return {value:e.id, label:e.summary, key:i}}));
 })
 
 router.get("/getLocalOptions", async (req, res)=>{
     res.send((await calendarRepo.getLocalCalendarOptions(req.user.id)).map((e,i)=>{return {value:e.id, label:e.name, key:i}}));
+})
+
+router.post("/addCalendar", async (req, res)=>{
+    for(let id of req.body.id){
+        await calendarRepo.addNewCalendar(req.user.id, id)
+    }
+    res.send({success:true})
+})
+
+router.post("/shareCalendar", async (req, res)=>{
+    for(let id of req.body.id){
+        await calendarRepo.shareCalendar(req.user.id, id);
+    }
+    res.send({success:true})
 })
 
 module.exports = router;
