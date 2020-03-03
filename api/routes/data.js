@@ -26,7 +26,7 @@ router.get('/understand',async function(req, res, next){
     res.status(200).send();
 })
 
-router.post('/generate/', async function(req, res, next){
+router.post('/generate', async function(req, res, next){
     if(!req.body.sId){
         res.sendStatus(500);
         return;
@@ -35,6 +35,7 @@ router.post('/generate/', async function(req, res, next){
         const plan = await PlanController.generateSemester(req.body.sId);
         res.send({plan:plan});
     }catch(err){
+        console.log(err)
         res.send({error:err.message});
     }
 })
@@ -42,7 +43,7 @@ router.post('/generate/', async function(req, res, next){
 /*
 This method creates a plan for the passed in name of the plan.
 */
-router.post('/plan/', async function(req, res, next){
+router.post('/plan', async function(req, res, next){
     const plan = await PlanController.retrievePlanGraph(req.body.sId);
     res.send({tree:plan});
 })
@@ -57,6 +58,14 @@ router.post('/regenerate', async function(req, res, next){
     }else{
         res.send({plan:plan})
     }
+})
+
+router.get('/plans', async function(req, res){
+    const plans = [];
+    for(let elem of await PlanController.getPlans()){
+        plans.push({value:elem.id, label:elem.name})
+    }
+    res.send({plans:plans})
 })
 
 module.exports = router;

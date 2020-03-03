@@ -32,6 +32,7 @@ oauth2Client.on('tokens', (tokens) => {
             audience: config.GOOGLE_CLIENT_ID
         }).then((token)=>{
             var attrs = token.getPayload();
+            // May not return display name and image on every single response?
             User.findOneAndUpdate({ googleId: attrs.sub }, 
                 {
                     googleId: attrs.sub, 
@@ -39,7 +40,7 @@ oauth2Client.on('tokens', (tokens) => {
                     image: attrs.picture, 
                     refresh_token: tokens.refresh_token, 
                     access_token: tokens.access_token,
-                    id_token: tokens.id_token
+                    id_token: tokens.id_token,
                 }, 
             {upsert:true},
             function (err, user) {

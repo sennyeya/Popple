@@ -1,7 +1,8 @@
 import React from 'react';
 import Loading from './Loading';
 import PlanItem from './PlanItem';
-import {config} from './config';
+import PlanPicklist from './PlanPicklist'
+import {config, authOptionsPost} from './config';
 import style from './LandingPage.module.css'
 
 class Plan extends React.Component{
@@ -13,27 +14,20 @@ class Plan extends React.Component{
             options: [],
             selected: [],
             isLoading:true,
-            sId:this.props.sId
+            sId:this.props.sId,
+            plans: [],
+            selectedOption: null
         }
 
         this.onSelect = this.onSelect.bind(this);
     }
 
     componentDidMount(){
-        fetch(config.api+"/data/generate/", 
-        {
-            method:'POST',
-            credentials: 'include',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                "Access-Control-Allow-Credentials": true
-            },
-            body: JSON.stringify({sId: this.state.sId})
-        }).then(data=>data.json()).then(json=>{
-            var arr = json['plan']?json['plan']:[];
+        fetch(config.api+"/data/generate", authOptionsPost(JSON.stringify({sId: this.state.sId})))
+        .then(data=>data.json()).then(json=>{
+            var arr = json.plan || [];
             this.setState({options:arr, isLoading:false, selected:arr.map(e=>e._id)});
-        })
+        });
     }
 
     render(){
@@ -48,7 +42,11 @@ class Plan extends React.Component{
                     }
                 </ul>
                 <input type="button" onClick={this.onClassReload} id="regenerate" value="Regenerate My Plan"></input>
-            </div>):<p>No plans found. Please change your credit count.</p>
+            </div>):(
+            <>
+                <p>No plans found. Please add a new plan.</p>
+                <PlanPicklist/>
+            </>)
         }
         return(
             <>
@@ -62,6 +60,10 @@ class Plan extends React.Component{
             </div>
             </>
         )
+    }
+
+    handleChange= (selectedOption)=>{
+        this.setState({selectedOption})
     }
 
     onSelect = (id, element) =>{
@@ -80,17 +82,8 @@ class Plan extends React.Component{
             return;
         }
         this.setState({isLoading:true})
-        fetch(config.api+"/data/regenerate/", 
-        {
-            method:'POST',
-            credentials: 'include',
-            headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Credentials': true
-            },
-            body: JSON.stringify({sId: this.state.sId, vals:this.state.selected})
-        }).then(data=>data.json()).then(json=>{
+        fetch(config.api+"/data/regenerate", authOptionsPost(JSON.stringify({sId: this.state.sId, vals:this.state.selected})))
+        .then(data=>data.json()).then(json=>{
             if(json.error){
                 alert("Could not remove classes, no suitable alternatives found.");
                 this.setState({
@@ -98,7 +91,7 @@ class Plan extends React.Component{
                 });
                 return; 
             }
-            var arr = json['plan']?json['plan']:[];
+            var arr = json.plan||[];
             this.setState({
                 options:arr, 
                 selected:arr.map(e=>e._id), 

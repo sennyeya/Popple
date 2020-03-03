@@ -3,7 +3,8 @@ var db = require('../db');
 var uuid = require('uuid/v4');
 const fs = require("fs");
 var {config} = require("../config");
-const {google} = require("googleapis")
+const {google} = require("googleapis");
+const PlanController = require("../controllers/planController")
 
 const {Calendar} = require('../schema/calendar');
 const {Student} = require('../schema/student')
@@ -19,5 +20,16 @@ router.get('/current', function(req, res, next) {
     });
   })
 });
+
+router.post('/addPlan', async (req, res)=>{
+  try{
+    await PlanController.addPlans(req.user.googleId, req.body)
+    res.send({
+      success:true
+    });
+  }catch(err){
+    res.send({err: err})
+  }
+})
 
 module.exports = router;

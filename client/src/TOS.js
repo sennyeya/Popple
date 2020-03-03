@@ -1,7 +1,20 @@
 import React from 'react';
+import {Link} from 'react-router-dom';
+import style from './Navbar.module.css'
 
 function TOS() {
   return (
+    <>
+    <nav>
+        <ul className={style.navBarList}>
+        <li className={style.navBarListItem}>
+            <Link to="/">Home</Link>
+        </li>
+        <li className={style.navBarListItem}>
+            <Link to="/tos">Terms of Service</Link>
+        </li>
+        </ul>
+    </nav>
       <div style={{padding: "3%", margin: "3%"}}>
         <h1> The Information We Collect </h1>
         <p>Popple collects the following data in order to improve your experience using Popple.</p>
@@ -20,6 +33,7 @@ function TOS() {
         Popple is not responsible for any content posted into a Google Calendar hosted inside of Popple and Popple makes no attempt to adjudicate disputes about appropriate content. Please be aware that your email is publicly visible in Google Calendar events, when creating content that may be considered questionably appropriate.
         </p>
     </div>
+    </>
   );
 }
 

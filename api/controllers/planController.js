@@ -437,17 +437,19 @@ answer based on credit count.
 Params: options, the set of all class options this student can take.
         credits, the desired number of credits.
 */
-generatePlan = async function(options, credits){
-    var plan = [];
-    var i =0;
+generatePlan = function(options, credits){
+    return new Promise(async (resolve, reject)=>{
+        var plan = [];
+        var i =0;
 
-    while(true){
-        if(await recurHelperPlan(options, plan, Number(credits), i)){
-            break;
+        while(true){
+            if(await recurHelperPlan(options, plan, Number(credits), i)){
+                break;
+            }
+            i=i+1;
         }
-        i=i+1;
-    }
-    return new Promise((resolve, reject)=>resolve(plan));
+        resolve(plan)
+    });
 }
 
 /*
@@ -494,15 +496,16 @@ getCreditSum = function(plan){
 /*
 This method ties to an api hook, meant to retrieve the graphic version of the plan for the student.
 */
-module.exports.retrievePlanGraph = async function(studentId){
-    var student = await Student.findById(studentId).exec();
+module.exports.retrievePlanGraph = function(studentId){
+    return new Promise(async (resolve, reject)=>{
+        var student = await Student.findById(studentId).exec();
 
-    var tree = []
-    for(let plan of student.plans){
-        tree = tree.concat(await returnVisualTree(plan.nodes, student))
-    }
-
-    return new Promise((resolve, reject)=>{
+        var tree = {nodes:[], edges:[]}
+        for(let plan of student.plans){
+            var arr = await returnVisualTree(plan.nodes, student);
+            tree.nodes = tree.nodes.concat(arr.nodes);
+            tree.edges = tree.edges.concat(arr.edges);
+        }
         resolve(tree);
     })
 }
@@ -674,4 +677,59 @@ module.exports.regenerateTree = async function(id, vals){
 
 module.exports.getPlans = async function(){
     return await Plan.find({}).exec();
+}
+
+module.exports.addPlans = async function(student, ids){
+    return new Promise(async (res, rej)=>{
+        var plans = [];
+        for(let elem of ids){
+            plans.push(elem.value)
+        }
+        Student.findOneAndUpdate({googleId:student}, {plans: plans}, (err, doc)=>{
+            if(err){
+                rej(err)
+            }else{
+                res()
+            }
+        })
+    })
+}
+
+module.exports.getItem = async (id) =>{
+    return await Plan.findById(id).exec();
+}
+
+module.exports.getClasses = async (id)=>{
+    var classes = [];
+    var plan = await Plan.findById(id).exec();
+    for(let node of plan.nodes){
+        node = await PlanNode.findById(node).exec();
+        let classNode = await Class.findById(node.class).exec();
+        classes.push(classNode)
+    }
+    return classes;
+}
+
+module.exports.addPlan = async (name, requirements)=>{
+    var nodes = [];
+    for(let req of requirements){
+        let [node] = await PlanNode.find({class:req}).exec();
+        if(!node){
+            node = await PlanNode.create({class:req, children:[]})
+        }
+        nodes.push(node.id);
+    }
+    await Plan.create({name:name, nodes:nodes})
+}
+
+module.exports.updatePlan = async (id, name, requirements) =>{
+    var nodes = [];
+    for(let req of requirements){
+        let [node] = await PlanNode.find({class:req}).exec();
+        if(!node){
+            node = await PlanNode.create({class:req, children:[]})
+        }
+        nodes.push(node.id);
+    }
+    await Plan.findByIdAndUpdate(id, {name:name, nodes:nodes}).exec();
 }

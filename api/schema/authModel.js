@@ -7,7 +7,8 @@ const userSchema = new Schema({
   image: String,
   refresh_token: String, 
   access_token: String,
-  id_token: String
+  id_token: String,
+  isAdmin: Boolean
 });
 
 const User = mongoose.model("authUser", userSchema);

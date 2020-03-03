@@ -3,16 +3,6 @@ import {config} from './config';
 import Loading from './Loading'
 import style from './LandingPage.module.css'
 
-const options = 
-{
-    credentials: "include",
-    headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Credentials": true
-    }
-}
-
 class User extends React.Component{
 
     constructor(props){
