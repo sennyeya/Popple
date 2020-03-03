@@ -24,7 +24,9 @@ module.exports = {
     getAllCalendars: async (id)=>{
         var joinElems = await CalendarStudentJoin.find({studentId:id}).exec();
         var items = await Calendar.find({studentId:id}).exec();
-        items = items.concat(await Calendar.find({id:{$in:joinElems.map(e=>e.calendarId)}}).exec())
+        for(let elem of joinElems){
+            items.push(await Calendar.findById(elem.calendarId).exec())
+        }
         var cals = [];
         for(let item of items){
             try{
@@ -47,7 +49,8 @@ module.exports = {
 
     addCalendar: async (studentId, calendarId)=>{
         await CalendarStudentJoin.create({studentId:studentId, calendarId:calendarId})
-        var cal = await calendar.calendarList.insert({requestBody:{id:calendarId}})
+        var cal = await Calendar.findById(calendarId).exec();
+        cal = await calendar.calendarList.insert({requestBody:{id:cal.googleId}})
         console.log(cal.data)
     },
 

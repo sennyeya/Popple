@@ -15,7 +15,7 @@ export default class StudentDashboard extends React.Component{
             <nav>
             <ul className={style.navBarList}>
               <li className={style.navBarListItem}>
-                <Link to="/">Home</Link>
+                <Link to="/student">Home</Link>
               </li>
               <li className={style.navBarListItem}>
                 <Link to="/tos">Terms of Service</Link>

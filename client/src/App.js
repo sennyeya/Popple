@@ -23,7 +23,8 @@ export default function App(){
           {/* A <Switch> looks through its children <Route>s and
               renders the first one that matches the current URL. */}
           <Switch>
-            <Route path="/" exact render={()=><StudentDashboard/>}>
+            <Route path="/" exact render={()=>{<HomePage/>}}></Route>
+            <Route path="/student" exact render={()=><StudentDashboard/>}>
             </Route>
             <Route path="/tos" exact render={()=><TOS/>}>
             </Route>

@@ -30,7 +30,7 @@ router.get("/getLocalOptions", async (req, res)=>{
 
 router.post("/addCalendar", async (req, res)=>{
     for(let id of req.body.id){
-        await calendarRepo.addNewCalendar(req.user.id, id)
+        await calendarRepo.addCalendar(req.user.id, id)
     }
     res.send({success:true})
 })
