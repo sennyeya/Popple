@@ -40,8 +40,9 @@ router.get("/login/failed", (req, res) => {
 
 // When logout, redirect to client
 router.get("/logout", (req, res) => {
-  req.logout();
-  res.redirect(CLIENT_HOME_PAGE_URL);
+  req.user = null;
+  req.session.user = null;
+  res.redirect(config.FRONTEND_URL);
 });
 
 // auth with google

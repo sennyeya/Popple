@@ -12,7 +12,7 @@ export default function AsyncSelect(props) {
 
   React.useEffect(() => {
     let active = true;
-    
+
     if (!loading) {
       return undefined;
     }

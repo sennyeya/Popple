@@ -217,6 +217,7 @@ function refreshToken(user){
                         access_token: token.tokens.access_token, 
                         id_token: token.tokens.id_token
                     }).then((res)=>{
+                        oauth2Client.setCredentials({id_token: attrs.id_token, access_token: attrs.access_token, refresh_token: attrs.refresh_token})
                         resolve(res);
                     })
                 })
