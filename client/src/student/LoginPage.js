@@ -1,10 +1,13 @@
 import React from 'react';
 import {config} from './config';
+import GoogleButton from 'react-google-button';
 
 class LoginPage extends React.Component{
     render(){
         return (
-            <button onClick={this._handleSignInClick} value="Login To Google">Login To Google</button>
+            <div style={{top:"50%", left:"50%", transform:"translate(50%, 50%)"}}>
+                <GoogleButton onClick={this._handleSignInClick}/>
+            </div>
         )
     }
 

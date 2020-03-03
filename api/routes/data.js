@@ -42,8 +42,8 @@ router.post('/generate/', async function(req, res, next){
 /*
 This method creates a plan for the passed in name of the plan.
 */
-router.post('/plan/:name', async function(req, res, next){
-    const plan = await PlanController.retrievePlanGraph(req.params.name, req.body.sId);
+router.post('/plan/', async function(req, res, next){
+    const plan = await PlanController.retrievePlanGraph(req.body.sId);
     res.send({tree:plan});
 })
 

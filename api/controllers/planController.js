@@ -494,12 +494,13 @@ getCreditSum = function(plan){
 /*
 This method ties to an api hook, meant to retrieve the graphic version of the plan for the student.
 */
-module.exports.retrievePlanGraph = async function(name, studentId){
+module.exports.retrievePlanGraph = async function(studentId){
     var student = await Student.findById(studentId).exec();
 
-    var plan = await Plan.find({'name':name}).exec();
-
-    const tree = await returnVisualTree(plan[0].nodes, student);
+    var tree = []
+    for(let plan of student.plans){
+        tree = tree.concat(await returnVisualTree(plan.nodes, student))
+    }
 
     return new Promise((resolve, reject)=>{
         resolve(tree);
