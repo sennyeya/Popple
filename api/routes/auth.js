@@ -40,7 +40,8 @@ router.get("/login/failed", (req, res) => {
 
 // When logout, redirect to client
 router.get("/logout", (req, res) => {
-  req.logout();
+  req.user = null;
+  req.session.user = null;
   res.redirect(config.FRONTEND_URL);
 });
 

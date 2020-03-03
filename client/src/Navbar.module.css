@@ -1,24 +1,37 @@
 ul.navBarList {
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    background-color: #333;
-  }
-  
-  li.navBarListItem {
-    float: left;
-  }
-  
-  li.navBarListItem a {
-    display: block;
-    color: white;
-    text-align: center;
-    padding: 14px 16px;
-    text-decoration: none;
-  }
-  
-  /* Change the link color to #111 (black) on hover */
-  li.navBarListItem a:hover {
-    background-color: #111;
-  }
+  list-style-type: none;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: #333;
+}
+
+li.navBarListItem {
+  float: left;
+}
+
+li.navBarListItemActive {
+  float: right;
+  background-color: white
+}
+
+li.navBarListItemActive a {
+  display: block;
+  color: black;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+li.navBarListItem a {
+  display: block;
+  color: white;
+  text-align: center;
+  padding: 14px 16px;
+  text-decoration: none;
+}
+
+/* Change the link color to #111 (black) on hover */
+li.navBarListItem a:hover {
+  background-color: #111;
+}
