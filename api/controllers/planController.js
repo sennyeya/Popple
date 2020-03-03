@@ -698,3 +698,38 @@ module.exports.addPlans = async function(student, ids){
 module.exports.getItem = async (id) =>{
     return await Plan.findById(id).exec();
 }
+
+module.exports.getClasses = async (id)=>{
+    var classes = [];
+    var plan = await Plan.findById(id).exec();
+    for(let node of plan.nodes){
+        node = await PlanNode.findById(node).exec();
+        let classNode = await Class.findById(node.class).exec();
+        classes.push(classNode)
+    }
+    return classes;
+}
+
+module.exports.addPlan = async (name, requirements)=>{
+    var nodes = [];
+    for(let req of requirements){
+        let [node] = await PlanNode.find({class:req}).exec();
+        if(!node){
+            node = await PlanNode.create({class:req, children:[]})
+        }
+        nodes.push(node.id);
+    }
+    await Plan.create({name:name, nodes:nodes})
+}
+
+module.exports.updatePlan = async (id, name, requirements) =>{
+    var nodes = [];
+    for(let req of requirements){
+        let [node] = await PlanNode.find({class:req}).exec();
+        if(!node){
+            node = await PlanNode.create({class:req, children:[]})
+        }
+        nodes.push(node.id);
+    }
+    await Plan.findByIdAndUpdate(id, {name:name, nodes:nodes}).exec();
+}

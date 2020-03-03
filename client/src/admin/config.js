@@ -7,8 +7,10 @@ module.exports.authOptionsPost = (body) => {
     return{
         credentials: "include",
         method: 'POST',
+        mode: 'cors',
         headers: {
-            Accept: "application/json",
+            "x-Trigger": "CORS",
+            "Accept": "application/json",
             "Content-Type": "application/json",
             "Access-Control-Allow-Credentials": true
         },

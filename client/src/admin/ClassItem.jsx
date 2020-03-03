@@ -1,191 +1,205 @@
-import React from 'react';
-import ReactDOM from 'react-dom'
+import React, { useEffect } from 'react';
 import Loading from './Loading'
-import Select from 'react-select';
-import Async from 'react-select/async'
-import Button from 'react-bootstrap/Button';
-import ButtonToolbar from 'react-bootstrap/ButtonToolbar';
-import Modal from 'react-bootstrap/Modal'
 import { authOptionsPost, config, authOptionsGet } from './config';
-import InputGroup from 'react-bootstrap/InputGroup';
-import FormControl from 'react-bootstrap/FormControl'
+import Button from '@material-ui/core/Button';
+import ButtonGroup from '@material-ui/core/ButtonGroup';
+import AsyncSelect from '../shared/AsyncSelect'
+import { makeStyles } from '@material-ui/core/styles';
+import { Dialog, TextField, DialogActions, DialogTitle, DialogContent, DialogContentText, FormControl } from '@material-ui/core';
 
-class ClassItem extends React.Component{
-    constructor(props){
-        super(props);
+const useStyles = makeStyles(theme => ({
+    root: {
+      display: 'flex',
+      flexWrap: 'wrap',
+    },
+    margin: {
+      margin: theme.spacing(1),
+    },
+    withoutLabel: {
+      marginTop: theme.spacing(3),
+    },
+    textField: {
+      width: 200,
+    },
+  }));
 
-        this.state = {
-            isLoading:true,
-            classes: [],
-            showEdit: false,
-            showAdd: false,
-            modalLoading:true,
-            inputValue: null,
-            selected: null,
-            defaultOptions: []
+function ClassItem(props){
+    const [selected, setSelected] = React.useState(null);
+    const [showAdd, setShowAdd] = React.useState(false);
+    const [showEdit, setShowEdit] = React.useState(false);
+    return (
+        <>
+        <p>Here you can edit an existing class or add a new one.</p>
+        <AsyncSelect url={()=>{
+            return fetch(config.api+'/admin/classPicklist', authOptionsGet)
+        }} 
+        label="Class to Add"
+        onClick={(e,val)=>{
+            setSelected(val)
+        }}/>
+        <ButtonGroup>
+            <Button variant="contained" disabled={!selected} onClick={()=>setShowEdit(true)}>Edit</Button>
+            <Button variant="outlined" onClick={()=>setShowAdd(true)}>Add A New Class</Button>
+        </ButtonGroup>
+        <AddClassModal open={showAdd} setOpen={setShowAdd}/>
+        <EditClassModal open={showEdit} setOpen={setShowEdit} item={selected}/>
+        </>
+    )
+}
+
+function AddClassModal(props){
+    const [name, setName] = React.useState("");
+    const [credits, setCredits] = React.useState(0);
+    const [options, setOptions] = React.useState([]);
+    const [selected, setSelected] = React.useState([]);
+    const {open, setOpen} = props;
+    const [loading, setLoading] = React.useState(false);
+    const [success, setSuccess] = React.useState(false);
+
+    const handleClose = ()=>{
+        setOpen(false)
+    }
+
+    const submitForm = () =>{
+        (async ()=>{
+            var response = await fetch(config.api + "/admin/saveClassItem", authOptionsPost(JSON.stringify({
+                name:name, 
+                credits:credits, 
+                requirements: selected
+            })))
+            var json = await response.json();
+            setLoading(false);
+            setSuccess(true)
+        })();
+    }
+
+    return (
+    <>
+        <Dialog open={open} onClose={handleClose}>
+            <DialogTitle id="alert-dialog-title">{"Add Class"}</DialogTitle>
+            <DialogContent>
+            <DialogContentText id="alert-dialog-description">
+                This is used to add a class.
+            </DialogContentText>
+            {loading?<Loading></Loading>:
+            <form>
+                <TextField label={"Name of Class"} required onChange={(e)=>{
+                    setName(e.target.value)
+                }}/>
+                <AsyncSelect url={()=>{
+                                return fetch(config.api+'/admin/classPicklist', authOptionsGet)
+                            }}
+                            multi
+                            label="Required Classes"
+                            value={selected}
+                            onClick={(e,val)=>{
+                                setSelected(val)
+                            }}/>
+                <FormControl>
+                <TextField label={"# of Credits"} required type={"number"} onChange={(e)=>{
+                    setCredits(e.target.value)
+                }}/>
+                </FormControl>
+            </form>}
+            </DialogContent>
+            <DialogActions>
+            <Button onClick={handleClose} color="primary">
+                Cancel
+            </Button>
+            <Button onClick={submitForm} color="primary" autoFocus>
+                Save
+            </Button>
+            </DialogActions>
+        </Dialog>
+    </>)
+}
+
+function EditClassModal(props){
+    const [name, setName] = React.useState("");
+    const [credits, setCredits] = React.useState(0);
+    const [options, setOptions] = React.useState([]);
+    const [selected, setSelected] = React.useState([]);
+    const {open, setOpen, item} = props;
+    const [loading, setLoading] = React.useState(false)
+
+    useEffect(()=>{
+        setName(item?item.label:"")
+        setCredits(item?item.credits:0)
+    }, [item])
+
+    useEffect(()=>{
+        let active = true;
+        if(!item){
+            return undefined
         }
-
-        this._onEditClick = this._onEditClick.bind(this);
-        this._onHideEdit = this._onHideEdit.bind(this);
-        this._onSaveEdit = this._onSaveEdit.bind(this)
-        this._onAddClick = this._onAddClick.bind(this);
-        this._onHideAdd = this._onHideAdd.bind(this);
-        this._onSaveAdd = this._onSaveAdd.bind(this);
-        this._onChange = this._onChange.bind(this)
-
-        this._getRequirements = this._getRequirements.bind(this)
-    }
-
-    componentDidMount(){
-        fetch(config.api+ "/admin/classPicklist", authOptionsGet).then((res)=>{
-            if(!res.ok){
-                this.props.setErrorState(res.statusText)
-            }
-            return res.json()
-        }).then((json)=>{
-            this.setState({classes:json.classes||[], isLoading:false})
-        })
-    }
-
-    render(){
-        if(this.state.isLoading){
-            return (
-                <>
-                    <Loading></Loading>
-                </>
-            )
+        (async ()=>{
+            var res = await fetch(config.api+'/admin/getRequirements?id='+item.value, authOptionsGet);
+            var json = await res.json();
+            setSelected(json)
+        })();
+        return ()=>{
+            active = false;
         }
-        return (
-            <>
-            <p>Here you can edit an existing class or add a new one.</p>
-            <Select options={this.state.classes} onChange={this._onChange}></Select>
-            <ButtonToolbar>
-                <Button variant="primary" onClick={this._onEditClick}>Edit</Button>
-                <Button variant="light" onClick={this._onAddClick}>Add A New Class</Button>
-            </ButtonToolbar>
-            <Modal show={this.state.showEdit} onHide={this._onHideEdit}>
-                <Modal.Header closeButton>
-                    <Modal.Title>Edit</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    {this.state.modalLoading?<Loading></Loading>:(
-                        <>
-                        <InputGroup>
-                            <FormControl
-                            placeholder="Class Name"
-                            value={this.state.item.name}
-                            />
-                        </InputGroup>
-                        <Async 
-                            isMulti
-                            loadOptions={this._getRequirements} 
-                            onInputChange={this.onInputChange}
-                            defaultOptions={this.state.defaultOptions}
-                            defaultValue={this.state.defaultOptions?this.state.defaultOptions.filter(e=>this.state.item.requirements.includes(e.value)):[]}
-                        ></Async>
-                        </>
-                    )}
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="primary" onClick={this._onHideEdit}>Close</Button>
-                    <Button variant="secondary" onClick={this._onSaveEdit}>Save Changes</Button>
-                </Modal.Footer>
-            </Modal>
-            <Modal show={this.state.showAdd} onHide={this._onHideAdd}>
-                <Modal.Header closeButton>
-                    <Modal.Title>Add</Modal.Title>
-                </Modal.Header>
-                <Modal.Body>
-                    {this.state.modalLoading?<Loading></Loading>:<p>Test</p>}
-                </Modal.Body>
-                <Modal.Footer>
-                    <Button variant="primary" onClick={this._onHideAdd}>Close</Button>
-                    <Button variant="secondary" onClick={this._onSaveAdd}>Save Changes</Button>
-                </Modal.Footer>
-            </Modal>
-            </>
-        )
+    }, [item])
+
+    const handleClose = ()=>{
+        setOpen(false)
     }
 
-    loadDefaultOptions = inputValue => {
-        return new Promise((res, rej)=>{
-            this._getRequirements(inputValue).then(defaultOptions =>{
-                res(this.setState({ defaultOptions }))
-            })
-        });
-      };
-
-    onInputChange = (inputValue, { action }) => {
-        if (action === "input-change") {
-          this.setState({ inputValue });
-        }
-        if (action === "menu-close") {
-          this.loadDefaultOptions(this.state.item);
-        }
-      };
-
-    _getRequirements(val){
-        return new Promise((resolve, reject)=>{
-            if(!val){
-                resolve()
-            }
-            fetch(config.api+"/admin/getRequirements?id="+(val?val._id:this.state.item._id), authOptionsGet).then(res=>{
-                if(!res.ok){
-                    this.props.setErrorState(res.statusText)
-                }
-                resolve(res.json())
-            })
-        })
+    const submitForm = () =>{
+        (async ()=>{
+            var response = await fetch(config.api + "/admin/saveClassItem", authOptionsPost(JSON.stringify({
+                id: item.value,
+                name:name, 
+                credits:credits, 
+                requirements: selected
+            })))
+            var json = await response.json();
+            setLoading(false);
+        })();
     }
 
-    _onChange(selected){
-        this.setState({selected:selected})
-    }
-
-    _onSaveEdit(){
-        this.setState({showAdd:false})
-    }
-
-    _onHideEdit(){
-        this.setState({showEdit:false})
-    }
-
-    _onEditClick(){
-        if(!this.state.selected){
-            return;
-        }
-        fetch(config.api+ "/admin/getClassItem?id="+this.state.selected.value, authOptionsGet).then((res)=>{
-            if(!res.ok){
-                this.props.setErrorState(res.statusText)
-            }
-            return res.json()
-        }).then((json)=>{
-            this.loadDefaultOptions(json.item).then(()=>{
-                this.setState({item:json.item||null, showEdit:true, modalLoading:false})
-            });
-        })
-    }
-
-    _onSaveAdd(){
-        fetch(config.api+ "/admin/getClassItem?id="+this.state.selected.value, authOptionsPost).then((res)=>{
-            if(!res.ok){
-                this.props.setErrorState(res.statusText)
-            }
-            return res.json()
-        }).then((json)=>{
-            this.loadDefaultOptions(json.item).then(()=>{
-                this.setState({item:json.item||null, modalLoading:false, showAdd:true})
-            });
-        })
-    }
-
-    _onHideAdd(){
-        this.setState({showAdd:false})
-    }
-
-    _onAddClick(){
-        this.setState({showAdd:true})
-    }
+    return (
+    <>
+        <Dialog open={open} onClose={handleClose}>
+            <DialogTitle id="alert-dialog-title">{"Edit Class"}</DialogTitle>
+            <DialogContent>
+            <DialogContentText id="alert-dialog-description">
+                This allows you to edit a class.
+            </DialogContentText>
+            <form>
+                <TextField label={"Name of Class"} required onChange={(e)=>{
+                    setName(e.target.value)
+                }} defaultValue={item?item.label:""}/>
+                <AsyncSelect url={()=>{
+                                return fetch(config.api+'/admin/classPicklist', authOptionsGet)
+                            }} 
+                            multi
+                            label="Required Classes"
+                            filter={(val)=>{
+                                return val.value!==item.value
+                            }}
+                            value={selected}
+                            onClick={(e,val)=>{
+                                setSelected(val)
+                            }}/>
+                <FormControl>
+                <TextField label={"# of Credits"} required type={"number"} onChange={(e)=>{
+                    setCredits(e.target.value)
+                }} defaultValue={item?item.credits:''}/>
+                </FormControl>
+            </form>
+            </DialogContent>
+            <DialogActions>
+            <Button onClick={handleClose} color="primary">
+                Close
+            </Button>
+            <Button type="submit" onClick={submitForm} color="primary" autoFocus>
+                Save
+            </Button>
+            </DialogActions>
+        </Dialog>
+    </>)
 }
 
 export default ClassItem

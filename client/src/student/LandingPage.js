@@ -8,7 +8,7 @@ import Loading from './Loading';
 import ErrorPage from './ErrorPage'
 import { Tab, TabList, TabPanel, Tabs } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
-import CalendarView from "./CalendarView";
+import CalendarGrid from "./CalendarView";
 import landingPage from './LandingPage.module.css'
 
 class LandingPage extends React.Component{
@@ -92,7 +92,7 @@ class LandingPage extends React.Component{
                         <TabPanel>
                             <div>
                                 <User verify={this.verifyAuthenticated} name={this.state.name}/>
-                                <CalendarView verify={this.verifyAuthenticated}/>
+                                <CalendarGrid verify={this.verifyAuthenticated}/>
                             </div>
                         </TabPanel>
                         <TabPanel>
