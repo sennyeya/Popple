@@ -5,16 +5,6 @@ import style from './Navbar.module.css'
 function TOS() {
   return (
     <>
-    <nav>
-        <ul className={style.navBarList}>
-        <li className={style.navBarListItem}>
-            <Link to="/">Home</Link>
-        </li>
-        <li className={style.navBarListItem}>
-            <Link to="/tos">Terms of Service</Link>
-        </li>
-        </ul>
-    </nav>
       <div style={{padding: "3%", margin: "3%"}}>
         <h1> The Information We Collect </h1>
         <p>Popple collects the following data in order to improve your experience using Popple.</p>

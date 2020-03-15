@@ -15,6 +15,8 @@ import PlanItem from './admin/PlanItem';
 import ClassItem from './admin/ClassItem'
 import 'bootstrap/dist/css/bootstrap.min.css';
 import {config} from './config'
+import HomePage from './HomePage'
+import LoginPage from './LoginPage'
 
 export default function App(){
     return (
@@ -23,10 +25,11 @@ export default function App(){
           {/* A <Switch> looks through its children <Route>s and
               renders the first one that matches the current URL. */}
           <Switch>
-            <Route path="/" exact render={()=>{<HomePage/>}}></Route>
+            <Route path="/" exact render={()=><HomePage/>}></Route>
             <Route path="/student" exact render={()=><StudentDashboard/>}>
             </Route>
-            <Route path="/tos" exact render={()=><TOS/>}>
+            <Route path="/login" exact render={()=><HomePage children={[<LoginPage/>]}></HomePage>}></Route>
+            <Route path="/tos" exact render={()=><HomePage children={[<TOS/>]}></HomePage>}>
             </Route>
             <Route path="/admin" exact render={()=><AdminDashboard/>}>
             </Route>

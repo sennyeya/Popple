@@ -10,7 +10,9 @@ import {
 import PlanItem from './PlanItem';
 import style from '../Navbar.module.css'
 import ClassItem from './ClassItem';
-import ErrorPage from './ErrorPage'
+import ErrorPage from './ErrorPage';
+import Header from '../shared/Header'
+
 
 export default class AdminDashboard extends React.Component{
     constructor(props){
@@ -42,15 +44,16 @@ export default class AdminDashboard extends React.Component{
         }
         return(
             <>
+            <Header isAdmin/>
             <nav>
-                <ul className={style.navBarList}>
-                    <li className={style.navBarListItem}>
+                <ul>
+                    <li>
                     <Link to="/admin">Home</Link>
                     </li>
-                    <li className={style.navBarListItem}>
+                    <li>
                     <Link to="/admin/plan">Plan</Link>
                     </li>
-                    <li className={style.navBarListItem}>
+                    <li>
                     <Link to="/admin/class">Classes</Link>
                     </li>
                 </ul>

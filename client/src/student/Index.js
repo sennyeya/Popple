@@ -7,21 +7,17 @@ import {
   } from "react-router-dom";
 import style from '../Navbar.module.css'
 import LandingPage from './LandingPage';
+import Header from '../shared/Header'
 
 export default class StudentDashboard extends React.Component{
     render(){
         return(
             <>
+            <Header/>
             <nav>
-            <ul className={style.navBarList}>
-              <li className={style.navBarListItem}>
+            <ul>
+              <li>
                 <Link to="/student">Home</Link>
-              </li>
-              <li className={style.navBarListItem}>
-                <Link to="/tos">Terms of Service</Link>
-              </li>
-              <li className={style.navBarListItemActive}>
-                <Link to="/logout">Logout</Link>
               </li>
             </ul>
           </nav>

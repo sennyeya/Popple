@@ -1,0 +1,32 @@
+body{
+    margin:0;
+}
+
+header{
+    height:10%;
+    text-align: center;
+}
+
+header h1{
+    max-width: 80%;
+}
+
+header div.login{
+    float:right;
+    max-width: 10px;
+}
+
+.container{
+    margin-left:10%;
+    margin-right:10%;
+    text-align:left;
+    flex-flow: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    justify-items: center;
+}
+
+div[role=button]{
+    text-align: center;
+    margin: 0 auto;
+}
