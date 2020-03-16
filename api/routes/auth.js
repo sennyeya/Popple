@@ -41,7 +41,8 @@ router.get("/login/failed", (req, res) => {
 // When logout, redirect to client
 router.get("/logout", (req, res) => {
   req.user = null;
-  req.session.user = null;
+  req.session = null;
+  oauth2Client.credentials = null
   res.redirect(config.FRONTEND_URL);
 });
 
@@ -57,7 +58,11 @@ router.get("/google/redirect",async (req, res)=>{
   try{
     const {tokens} = await oauth2Client.getToken(req.query.code)
     oauth2Client.setCredentials(tokens);
-    res.redirect(config.FRONTEND_URL)
+    if(req.user&&req.user.isAdmin){
+      res.redirect(config.FRONTEND_URL+"/admin")
+    }else{
+      res.redirect(config.FRONTEND_URL+"/student")
+    }
   }catch(err){
     res.redirect(config.BASE_URL+"/auth/login/failed")
   }

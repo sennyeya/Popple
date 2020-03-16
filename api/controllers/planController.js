@@ -500,12 +500,19 @@ module.exports.retrievePlanGraph = function(studentId){
     return new Promise(async (resolve, reject)=>{
         var student = await Student.findById(studentId).exec();
 
-        var tree = {nodes:[], edges:[]}
+        var nodes = [];
         for(let plan of student.plans){
-            var arr = await returnVisualTree(plan.nodes, student);
-            tree.nodes = tree.nodes.concat(arr.nodes);
-            tree.edges = tree.edges.concat(arr.edges);
+            nodes = nodes.concat(plan.nodes);
+            let filter = [];
+            nodes = nodes.filter((e, i, arr)=>{
+                if(filter.some(f=>f.id==e.id)){
+                    return false;
+                }
+                filter.push(e);
+                return true;
+            })
         }
+        var tree = await returnVisualTree(nodes, student);
         resolve(tree);
     })
 }

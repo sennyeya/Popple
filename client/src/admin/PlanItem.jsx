@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import Loading from './Loading'
+import Loading from '../shared/Loading'
 import { authOptionsPost, config, authOptionsGet } from './config';
 import Button from '@material-ui/core/Button';
 import ButtonGroup from '@material-ui/core/ButtonGroup';

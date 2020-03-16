@@ -1,9 +1,11 @@
 import React from 'react';
-import Loading from './Loading';
+import Loading from '../shared/Loading';
 import PlanItem from './PlanItem';
 import PlanPicklist from './PlanPicklist'
 import {config, authOptionsPost} from './config';
-import style from './LandingPage.module.css'
+import style from './LandingPage.module.css';
+import mainStyle from '../Main.module.css'
+import {UserContext} from '../contexts/userContext'
 
 class Plan extends React.Component{
     constructor(props){
@@ -14,7 +16,6 @@ class Plan extends React.Component{
             options: [],
             selected: [],
             isLoading:true,
-            sId:this.props.sId,
             plans: [],
             selectedOption: null
         }
@@ -23,7 +24,7 @@ class Plan extends React.Component{
     }
 
     componentDidMount(){
-        fetch(config.api+"/data/generate", authOptionsPost(JSON.stringify({sId: this.state.sId})))
+        fetch(config.api+"/data/generate", authOptionsPost(JSON.stringify({sId: this.context.user.sId})))
         .then(data=>data.json()).then(json=>{
             var arr = json.plan || [];
             this.setState({options:arr, isLoading:false, selected:arr.map(e=>e._id)});
@@ -36,12 +37,12 @@ class Plan extends React.Component{
             content = <Loading/>
         }else{
             content = this.state.options.length?(
-            <div>
+            <div className={style.planSelect}>
                 <ul className={style.classes}>{this.state.options.map((e, index)=> {
                     return <PlanItem data={e} keyVal={index} key={index} handleSelect = {this.onSelect} className={this.state.selected.some(l=>l===e._id)?"selected":"unselected"}/>})
                     }
                 </ul>
-                <input type="button" onClick={this.onClassReload} id="regenerate" value="Regenerate My Plan"></input>
+                <input type="button" onClick={this.onClassReload} id="regenerate" value="Regenerate My Plan" className={style.planButton}></input>
             </div>):(
             <>
                 <p>No plans found. Please add a new plan.</p>
@@ -49,16 +50,9 @@ class Plan extends React.Component{
             </>)
         }
         return(
-            <>
-            <div className={style.containerBox}>
-                <div className={style.header}>
-                    <h1 className={style.headerText}>Plan</h1>
-                </div>
-                <div id={style.canvasContainer}>
-                    {content}
-                </div>
+            <div className={mainStyle.container}>
+                {content}
             </div>
-            </>
         )
     }
 
@@ -82,7 +76,7 @@ class Plan extends React.Component{
             return;
         }
         this.setState({isLoading:true})
-        fetch(config.api+"/data/regenerate", authOptionsPost(JSON.stringify({sId: this.state.sId, vals:this.state.selected})))
+        fetch(config.api+"/data/regenerate", authOptionsPost(JSON.stringify({sId: this.context.user.sId, vals:this.state.selected})))
         .then(data=>data.json()).then(json=>{
             if(json.error){
                 alert("Could not remove classes, no suitable alternatives found.");
@@ -100,5 +94,7 @@ class Plan extends React.Component{
         })
     }
 }
+
+Plan.contextType = UserContext;
 
 export default Plan;

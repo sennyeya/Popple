@@ -1,6 +1,6 @@
 import React from 'react';
 import {config} from '../student/config';
-import {Loading} from './Loading';
+import Loading from '../shared/Loading';
 
 class Update extends React.Component{
     
