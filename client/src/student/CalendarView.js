@@ -1,14 +1,15 @@
 import React from 'react';
 import {config, authOptionsGet, authOptionsPost} from './config';
-import Loading from './Loading';
+import Loading from '../shared/Loading';
 import style from './LandingPage.module.css';
+import mainStyle from '../Main.module.css'
 import { Calendar, momentLocalizer } from 'react-big-calendar'
 import moment from 'moment'
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import {Tabs, TabList, Tab, TabPanel} from 'react-tabs'
 import AsyncSelect from '../shared/AsyncSelect';
 import Button from '@material-ui/core/Button';
-import Grid from '@material-ui/core/Grid'
+import Grid from '@material-ui/core/Grid';
 
 const localizer = momentLocalizer(moment);
 
@@ -53,7 +54,9 @@ class CalendarItem extends React.Component{
     }
 
     componentDidMount(){
-        fetch(config.api+"/calendar/get", authOptionsPost(JSON.stringify({id:this.props.elem.id}))).then(e=>{
+        fetch(config.api+"/calendar/get", authOptionsPost(
+            JSON.stringify({id:this.props.elem.id}))
+        ).then(e=>{
             if(!e.ok){
                 this.props.verify();
                 throw new Error();
@@ -86,7 +89,7 @@ export default class CalendarGrid extends React.Component{
     componentDidMount(){
         fetch(config.api+"/calendar/getList", authOptionsGet).then(e=>{
             if(!e.ok){
-                
+                throw new Error(e.statusText);
             }
             return e.json();
         }).then(json=>{
@@ -94,7 +97,7 @@ export default class CalendarGrid extends React.Component{
         })
         fetch(config.api+"/calendar/getList", authOptionsGet).then(e=>{
             if(!e.ok){
-                
+                throw new Error(e.statusText);
             }
             return e.json();
         }).then(json=>{
@@ -104,19 +107,15 @@ export default class CalendarGrid extends React.Component{
 
     render(){
         if(this.state.loading){
-            return <div><p>Loading</p></div>
+            return <div className={mainStyle.container}><Loading></Loading></div>
         }
         if(!this.state.calendars.length){
             return(
-                <div><p>No calendars to show.</p></div>
+                <div className={mainStyle.container}><p>No calendars to show.</p></div>
             )
         }
-        return(<>
-        <div className={style.containerBox}>
-            <div className={style.header}>
-                <h1 className={style.headerText}>Calendars</h1>
-            </div>
-            <div id={style.canvasContainer}>
+        return(
+        <div className={mainStyle.container}>
             <Tabs>
                 <TabList>
                     {this.state.calendars.map(e=>{
@@ -171,16 +170,14 @@ export default class CalendarGrid extends React.Component{
                 </Grid>
                 </TabPanel>
             </Tabs>
-            </div>
-        </div>
-        </>)
+        </div>)
     }
 
     _onExternalCalendarClick(){
         this.setState({loading:true})
         fetch(config.api+"/calendar/shareCalendar", authOptionsPost(JSON.stringify({id:this.state.selected.map(e=>e.value)}))).then(e=>{
             if(!e.ok){
-
+                throw new Error();
             }
             return e.json()
         }).then(json=>{
@@ -192,7 +189,7 @@ export default class CalendarGrid extends React.Component{
         this.setState({loading:true})
         fetch(config.api+"/calendar/addCalendar", authOptionsPost(JSON.stringify({id:this.state.selected.map(e=>e.value)}))).then(e=>{
             if(!e.ok){
-
+                throw new Error();
             }
             return e.json()
         }).then(json=>{

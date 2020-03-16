@@ -17,6 +17,9 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import {config} from './config'
 import HomePage from './HomePage'
 import LoginPage from './LoginPage'
+import CalendarGrid from './student/CalendarView';
+import Plan from './student/Plan';
+import GraphItem from './student/Graph'
 
 export default function App(){
     return (
@@ -28,6 +31,9 @@ export default function App(){
             <Route path="/" exact render={()=><HomePage/>}></Route>
             <Route path="/student" exact render={()=><StudentDashboard/>}>
             </Route>
+            <Route path="/student/calendar" exact render={()=><StudentDashboard children={[<CalendarGrid/>]}/>}/>
+            <Route path="/student/plan" exact render={()=><StudentDashboard children={[<GraphItem/>]}/>}/>
+            <Route path="/student/classes" exact render={()=><StudentDashboard children={[<Plan/>]}/>}/>
             <Route path="/login" exact render={()=><HomePage children={[<LoginPage/>]}></HomePage>}></Route>
             <Route path="/tos" exact render={()=><HomePage children={[<TOS/>]}></HomePage>}>
             </Route>

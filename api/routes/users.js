@@ -15,8 +15,9 @@ var router = express.Router();
 router.get('/current', function(req, res, next) {
   Student.findOne({googleId: req.user.googleId}).then((doc)=>{
     res.send({
-      name:doc.name, 
-      id:doc.id
+      name:doc.name,
+      id:doc.id,
+      isAdmin:req.user.isAdmin
     });
   })
 });

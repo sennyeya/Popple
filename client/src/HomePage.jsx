@@ -2,13 +2,12 @@ import React from 'react'
 import {Link} from 'react-router-dom'
 import style from './Navbar.module.css';
 import headerStyle from './Main.module.css'
-import Main from './Main'
+import Main from './Main';
+import Header from './shared/Header'
 export default function HomePage(props){
     return (
         <>
-        <header>
-            <h1>Test</h1>
-        </header>
+        <Header/>
         <nav>
             <ul>
                 <li>

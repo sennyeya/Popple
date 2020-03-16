@@ -1,10 +1,12 @@
 import React from 'react';
-import Loading from './Loading'
+import Loading from '../shared/Loading'
 import {config, authOptionsPost} from './config';
 
 import Graph from "react-graph-vis";
-import style from './LandingPage.module.css'
-import PlanQuestionnaire from './PlanQuestionnaire'
+import style from './LandingPage.module.css';
+import mainStyle from '../Main.module.css'
+import PlanQuestionnaire from './PlanQuestionnaire';
+import {UserContext} from '../contexts/userContext'
 
 var options = {
     layout: {
@@ -28,13 +30,12 @@ class GraphItem extends React.Component{
         this.state = {
             treeData : {},
             isLoading:true,
-            sId:this.props.sId,
             noResults: false
         }
     }
 
     componentDidMount(){
-        fetch(config.api+"/data/plan", authOptionsPost(JSON.stringify({sId: this.state.sId})))
+        fetch(config.api+"/data/plan", authOptionsPost(JSON.stringify({sId: this.context.user.sId})))
         .then((response) =>{
             if(!response.ok){
                 throw new Error();
@@ -55,32 +56,20 @@ class GraphItem extends React.Component{
     render(){
         if(!Object.keys(this.state.treeData).length){
             return(
-                <>
-                <div className={style.containerBox}>
-                    <div className={style.header}>
-                        <h1 className={style.headerText}>Current Plan</h1>
-                    </div>
-                    <div id={style.canvasContainer}>
-                        {this.state.isLoading?<Loading/>:<PlanQuestionnaire/>}
-                    </div>
+                <div className={mainStyle.container}>
+                    {this.state.isLoading?<Loading/>:<PlanQuestionnaire/>}
                 </div>
-                </>
             )
         }else{
             return(
-                <>
-                <div className={style.containerBox}>
-                    <div className={style.header}>
-                        <h1 className={style.headerText}>Current Plan</h1>
-                    </div>
-                    <div id={style.canvasContainer}>
-                        {this.state.isLoading?<Loading/>:<Graph graph={this.state.treeData} options={options} style={{ height: "600px" }}/>}
-                    </div>
+                <div className={mainStyle.container}>
+                    {this.state.isLoading?<Loading/>:<Graph graph={this.state.treeData} options={options} style={{ height: "600px" }}/>}
                 </div>
-                </>
             )
         }
     }
 }
+
+GraphItem.contextType = UserContext;
 
 export default GraphItem;

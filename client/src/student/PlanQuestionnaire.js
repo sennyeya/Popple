@@ -1,5 +1,5 @@
 import React from 'react';
-import Loading from './Loading'
+import Loading from '../shared/Loading'
 import {config} from './config';
 
 import style from './LandingPage.module.css'

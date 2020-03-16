@@ -1,6 +1,6 @@
 import React from 'react';
 import {config, authOptionsGet} from '../student/config';
-import Loading from './Loading'
+import Loading from '../shared/Loading'
 import Select from 'react-select'
 
 

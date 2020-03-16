@@ -1,5 +1,5 @@
 
-.containerBox{
+  .containerBox{
     text-align: center;
     background:rgba(255, 255, 255, 0.781);
     border-radius: 12px;
@@ -82,4 +82,17 @@
   
   li span.credits{
     width:25%;
+  }
+
+  .planButton{
+    background:#ccc;
+    padding:4px 15px;
+    border:0 none;
+    border-radius: 5px;
+  }
+
+  .planSelect{
+    display:flex;
+    align-items: center;
+    flex-direction: column;
   }

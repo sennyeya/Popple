@@ -1,0 +1,42 @@
+.profilePhoto{
+    min-width: -webkit-min-content;
+    position: absolute;
+    right:3%;
+}
+
+img{
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+}
+
+.profileModal{
+    position: absolute;
+    top:5vh;
+    right:10px;
+    background-color: white;
+    border: 1px solid grey;
+    box-shadow: 0 2.8px 2.2px rgba(0, 0, 0, 0.034),
+    0 6.7px 5.3px rgba(0, 0, 0, 0.048),
+    0 12.5px 10px rgba(0, 0, 0, 0.06),
+    0 22.3px 17.9px rgba(0, 0, 0, 0.072),
+    0 41.8px 33.4px rgba(0, 0, 0, 0.086),
+    0 100px 80px rgba(0, 0, 0, 0.12);
+    width:250px;
+    height:125px;
+    display:table;
+    z-index:100001;
+    border-radius: 10%;
+    outline:none;
+    overflow: auto;
+}
+
+.profileModalContainer{
+    display:flex;
+    flex-direction: column;
+    margin:10%;
+}
+
+.profileModalContainer button{
+    margin:5%
+}

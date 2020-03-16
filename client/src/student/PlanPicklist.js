@@ -1,6 +1,6 @@
 import React from 'react';
 import Select from 'react-select';
-import Loading from './Loading';
+import Loading from '../shared/Loading';
 import {config, authOptionsPost, authOptionsGet} from './config';
 import Button from 'react-bootstrap/Button';
 
