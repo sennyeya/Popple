@@ -60,12 +60,26 @@ router.post('/regenerate', async function(req, res, next){
     }
 })
 
+/**
+ * Return a list of all plans.
+ */
 router.get('/plans', async function(req, res){
     const plans = [];
     for(let elem of await PlanController.getPlans()){
         plans.push({value:elem.id, label:elem.name})
     }
     res.send({plans:plans})
+})
+
+/**
+  * This method creates a plan for the passed in name of the plan.
+  */
+router.post('/bucket', async function(req, res, next){
+    const buckets = await PlanController.retrieveBuckets(req.body.sId);
+    let retVal = buckets.map(e=>{
+        return {id:e.id, label:e.class.name, bucket:e.bucket.id, children:e.children.map(e=>e.id)}
+    })
+    res.json(retVal);
 })
 
 module.exports = router;

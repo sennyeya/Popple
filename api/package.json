@@ -25,6 +25,7 @@
     "uglify-js": "^3.6.0",
     "uuid": "^3.3.2",
     "wink-ner": "^2.0.2",
+    "ws": "^7.2.3",
     "xlsx": "^0.15.0"
   },
   "devDependencies": {
