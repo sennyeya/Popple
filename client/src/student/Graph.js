@@ -8,7 +8,6 @@ import {UserContext} from '../contexts/userContext'
 import {getBucket} from './BucketItem'
 import rd3 from 'react-d3-library';
 import * as d3 from 'd3'
-const RD3Component = rd3.Component;
 
 class GraphItem extends React.Component{
     
@@ -17,7 +16,8 @@ class GraphItem extends React.Component{
         this.state = {
             treeData : {},
             isLoading:true,
-            noResults: false
+            noResults: false,
+            bucketData: {}
         }
     }
 
@@ -30,43 +30,38 @@ class GraphItem extends React.Component{
             return response.json();
           })
           .then((myJson) => {
-              console.log(myJson)
                 if(!myJson.tree ||!myJson.tree.nodes.length){
-                    this.setState({isLoading:false})
-                }else{
-                    console.log(myJson.tree)
-                    this.setState({treeData:myJson.tree, isLoading:false})
+                    throw new Error("No tree data received.");
                 }
+                this.setState({treeData:myJson.tree})
+                fetch(config.api+"/data/bucket", authOptionsPost(JSON.stringify({sId: this.context.user.sId})))
+                .then((response) =>{
+                    if(!response.ok){
+                        throw new Error(response.status+": "+response.statusText);
+                    }
+                    return response.json();
+                  }).then(json=>{
+                      console.log(json)
+                    this.setState({bucketData:json, isLoading:false})
+                  })
           })
     }
 
     render(){
-        if(!Object.keys(this.state.treeData).length){
-            return(
-                <div className={mainStyle.container}>
-                    {this.state.isLoading?<Loading/>:<PlanQuestionnaire/>}
-                </div>
-            )
-        }else{
-            const values = [
-                {label:"Test", className:"CSC11", bucket:1},
-                {label:"Test2", className:"CSC11", bucket:1},
-                {label:"Test3", className:"CSC11", bucket:1},
-                {label:"Test", className:"CSC11", bucket:2},
-                {label:"Test2", className:"CSC11", bucket:2},
-                {label:"Test3", className:"CSC11", bucket:2},
-                {label:"Test", className:"CSC11", bucket:3}
-            ]
-            return(
-                <div className={mainStyle.container}>
-                    {this.state.isLoading?<Loading/>:(
-                        <>
-                        <ClassSelect data={values} tree={this.state.treeData}/>
-                        </>
-                    )}
-                </div>
-            )
+        var content;
+        if(this.state.isLoading){
+            content = <Loading/>
         }
+        else if(!Object.keys(this.state.treeData).length){
+            content = <PlanQuestionnaire/>;
+        }else{
+            content = <ClassSelect data={this.state.bucketData} tree={this.state.treeData}/>;
+        }
+        return (
+            <div className={mainStyle.container}>
+                {content}
+            </div>
+        )
     }
 }
 
@@ -78,19 +73,32 @@ class ClassSelect extends React.Component{
     constructor(props){
         super(props);
 
+        // Change this for prod.
+        let url = config.api.substring(config.api.indexOf("//")+2);
+        url = url.substring(0, url.indexOf(":"))
+
         this.state={
             nodes:this.props.data.map((e,id)=>{
-                return {radius:20, id:id, label:e.label, bucket:e.bucket, index:id}
+                return {height:40, width:60, id:e.id, label:e.label, bucket:e.bucket, children:e.children}
             }),
-            buckets: this.props.data.reduce((unique, item)=>unique.some(e=>e.bucket===item.bucket)?unique:[...unique, item], []).map(e=>{
-                return {height: 200, width: 400, id:e.bucket}
+            buckets: this.props.data.reduce((unique, item)=>unique.some(e=>e.bucket===item.bucket)?unique:[...unique, item], []).map((e,i)=>{
+                return {height: 200, width: 400, id:e.bucket, index:i}
             }),
             data: props.tree,
-            levels:{}
+            levels:{},
+            ws : new WebSocket("ws://"+url+":5050")
         }
 
-        this.state.buckets.map(e=>{
-            this.state.nodes.filter(f=>f.bucket===e.id).map((f,i)=>{
+        for(let node of this.state.data.nodes){
+            if(!this.state.levels[node.level]){
+                this.state.levels[node.level] = [node]
+            }else{
+                this.state.levels[node.level].push(node);
+            }
+        }
+
+        this.state.buckets.forEach(e=>{
+            this.state.nodes.filter(f=>f.bucket===e.id).forEach((f,i)=>{
                 f.ranking = i;
             })
         })
@@ -99,11 +107,19 @@ class ClassSelect extends React.Component{
 
         this.svg = React.createRef();
         this.tree = React.createRef();
+
+        this.state.ws.onopen = () =>{
+            this.setState({isLoading:false})
+        }
+
+        this.maxPerRow = 3;
     }
 
     componentDidMount(){
         const svg = d3.select(this.svg.current)
 
+        let state = this.state;
+        let context = this.context;
         // Test against svg bounding client rect for out of bounds stuff.
 
         // Get the distance from each corner of each corner of the other box and return the smallest as the distance.
@@ -129,7 +145,7 @@ class ClassSelect extends React.Component{
         }
 
         const getId = function(elem){
-            return +(elem.attr("id").substring(elem.attr("id").indexOf("bucketItem")+10).trim())
+            return (elem.attr("id").substring(elem.attr("id").indexOf("bucketItem")+10).trim())
         }
 
         /** Get the closest node to the current node.
@@ -156,27 +172,15 @@ class ClassSelect extends React.Component{
         }
 
         /** Return the bounding rectangle for an element, extracted from its client bounding rect.
-         *   @param elem d3 selected node.
+         *   @param {d3.Selection<Node>} elem d3 selected node.
          * @returns {Object} x1- left side
          *                   x2- right side
          *                   y1- top
          *                   y2 - bottom
          */
         const getBoundingRect = function(elem){
-            return {x1:elem.getBoundingClientRect().x-20, x2:elem.getBoundingClientRect().x+20, y1:elem.getBoundingClientRect().y-20, y2:elem.getBoundingClientRect().y+20}
-        }
-
-        /** 
-         * Return the outside bucket position, its svg translate position.
-         *   @param elem d3 selected node.
-         * @returns {Object} x-x position of bucket
-         *                   y-y position of bucket
-         */
-        var getBucketPos = function(elem){
-            let transform = svg.select("#bucket"+elem.bucket).attr("transform");
-            let x = +(transform.substring(transform.indexOf("(")+1, transform.indexOf(",")).trim())
-            let y = +(transform.substring(transform.indexOf(",")+1, transform.indexOf(")")).trim());
-            return {x:x, y:y}
+            let rect = elem.getBoundingClientRect();
+            return {x1:rect.left, x2:rect.right, y1:rect.top, y2:rect.bottom}
         }
 
         /**
@@ -193,6 +197,16 @@ class ClassSelect extends React.Component{
             let c4 = (curr.x1<=other.x2 && curr.y1<=other.y2&&curr.x2>=other.x2); // Bottom Right
             return c1 || c2 || c3 || c4;
         }
+
+        /**
+         * Get the translate data for the specific bucket item.
+         * @param {Object} d 
+         * @returns {String} translate string
+         */
+        var translateNode = function(d){
+            return this.getBucketItemTranslate(d);
+        }
+        translateNode = translateNode.bind(this)
 
         /**
          * Shifts the closest element based on the rankings of the elements.
@@ -213,8 +227,6 @@ class ClassSelect extends React.Component{
             }
             originalBox = getBoundingRect(closest.node());
 
-            console.log({elemData, closestData})
-
             // Normalize the rankings.
             let i =0;
             for(let datum of currBucketItems.sort((a,b)=>a.ranking-b.ranking)){
@@ -223,16 +235,8 @@ class ClassSelect extends React.Component{
             }
 
             svg.selectAll(".bucketItem:not(.dragging)")
-                .attr("transform", d=>{
-                    return (`translate(
-                        ${getBucketPos(d).x+(this.state.buckets.filter(
-                            e=>e.id===d.bucket)[0].width/5
-                            )*((d.ranking)%5) + this.state.buckets.filter(e=>e.id===d.bucket)[0].width/10}
-                        , 
-                        ${getBucketPos(d).y+(this.state.buckets.filter(
-                            e=>e.id===d.bucket)[0].height/5
-                            )*(Math.floor(d.ranking/5))})`
-                    )})
+                .data(state.nodes.filter(e=>e.id!==getId(elem)))
+                .attr("transform", d=>translateNode(d))
         }
 
         // For access to this.state
@@ -297,7 +301,7 @@ class ClassSelect extends React.Component{
          */
         var unshift = function(elem, bucket){
             let elemData = this.state.nodes.filter(e=>e.id===getId(elem))[0]
-            let nodes = this.state.nodes.filter(e=>e.bucket===bucket)
+            let nodes = this.state.nodes.filter(e=>e.bucket===bucket);
 
             // Shift all elements ahead of this element.
             for(let datum of nodes){
@@ -310,16 +314,8 @@ class ClassSelect extends React.Component{
             }
 
             svg.selectAll(".bucketItem:not(.dragging)")
-                .attr("transform", d=>{
-                    return (`translate(
-                        ${getBucketPos(d).x+(this.state.buckets.filter(
-                            e=>e.id===d.bucket)[0].width/5
-                            )*((d.ranking)%5) + this.state.buckets.filter(e=>e.id===d.bucket)[0].width/10}
-                        , 
-                        ${getBucketPos(d).y+(this.state.buckets.filter(
-                            e=>e.id===d.bucket)[0].height/5
-                            )*(Math.floor(d.ranking/5))})`
-                    )})
+                .data(state.nodes.filter(e=>e.id!==getId(elem)))
+                .attr("transform", d=>translateNode(d))
 
             // Send elem to back.
             elemData.ranking = (nodes.length)? (nodes.length-1):0;
@@ -346,14 +342,9 @@ class ClassSelect extends React.Component{
          * @returns {boolean}
          */
         var isInBucket = function(elem, bucket){
-            let transform = svg.select("#bucket"+bucket.id).attr("transform");
-            let x = +(transform.substring(transform.indexOf("(")+1, transform.indexOf(",")).trim())
-            let y = +(transform.substring(transform.indexOf(",")+1, transform.indexOf(")")).trim());
-            transform = elem.attr("transform");
-            let elemX = +(transform.substring(transform.indexOf("(")+1, transform.indexOf(",")).trim())
-            let elemY = +(transform.substring(transform.indexOf(",")+1, transform.indexOf(")")).trim());
-            let curr = {x1:elemX, x2:elemX+40, y1:elemY, y2:elemY+40};
-            let other = {x1:x, x2:x+bucket.width, y1:y, y2:y+bucket.height}
+            bucket = d3.select("#bucket"+bucket.id).node()
+            let curr = getBoundingRect(elem.node());
+            let other = getBoundingRect(bucket);
             let c1 = (curr.x2<=other.x2&&curr.x1>=other.x1&&curr.y2<=other.y2&&curr.y1>=other.y1);
             return c1
         }
@@ -374,8 +365,6 @@ class ClassSelect extends React.Component{
          */
         var deltaY = 0;
 
-        let state = this.state;
-
         /**
          * Store the previous bucket id
          * @type {Number}
@@ -387,6 +376,7 @@ class ClassSelect extends React.Component{
         // Set defaults when the drag starts.
         .on("start", function () {
             var current = d3.select(this);
+
             isExited = false;
             prevBucket = state.nodes.filter(e=>getId(d3.select(this))===e.id)[0].bucket;
             originalBox = getBoundingRect(current.node());
@@ -407,42 +397,46 @@ class ClassSelect extends React.Component{
 
             // Check if the element has changed buckets.
             let currBucket = getCurrentBucket(item);
-            if(currBucket!==prevBucket && currBucket>=0){
-                // Turn off all other buckets.
-                for(let i in svg.selectAll(".bucket").nodes()){
-                    item.classed("bucket"+(+i+1), false)
+            if(currBucket!==prevBucket && currBucket!==-1){
+                let curr = state.buckets.filter(e=>e.id===currBucket)[0]
+                let allChildren = [];
+
+                // Create list of all children in previous buckets.
+                state.nodes.filter(f=>state.buckets.filter(e=>e.index<curr.index&&e.index!==0).some(e=>e.id===f.bucket))
+                            .forEach((e)=>allChildren = allChildren.concat(e.id))
+                
+                // Does our current item have all required children in buckets already? 
+                let hasAllChildren = itemData.children.every(e=>allChildren.includes(e));
+                if(hasAllChildren||state.buckets.filter(e=>e.id===currBucket)[0].index===0){
+                    // Turn off all other buckets.
+                    item.classed("bucket"+prevBucket, false)
+                    // Set current bucket.
+                    item.classed("bucket"+currBucket, true)
+
+                    // Set to end of new bucket.
+                    let bucketNodes = svg.selectAll(".bucketItem.bucket"+currBucket).nodes()
+                    itemData.ranking = bucketNodes.length? (bucketNodes.length-1): 0;
+
+                    itemData.bucket = currBucket;
+                    // Reset old bucket.
+                    let nodes = state.nodes.filter(e=>e.bucket===prevBucket)
+
+                    // Normalize rankings.
+                    let i =0;
+                    for(let node of nodes){
+                        node.ranking = i;
+                        i++
+                    }
+
+                    svg.selectAll(".bucketItem.bucket"+currBucket)
+                        .data(state.nodes.filter(e=>e.bucket===currBucket))
+                        .attr("transform", d=>translateNode(d))
+
+                    prevBucket = currBucket
+                }else{
+                    let bucketNodes = svg.selectAll(".bucketItem.bucket"+prevBucket).nodes()
+                    itemData.ranking = bucketNodes.length? (bucketNodes.length-1): 0;
                 }
-                // Set current bucket.
-                item.classed("bucket"+currBucket, true)
-
-                // Set to end of new bucket.
-                let bucketNodes = svg.selectAll(".bucketItem.bucket"+currBucket).nodes()
-                itemData.ranking = bucketNodes.length? (bucketNodes.length-1): 0;
-
-                itemData.bucket = currBucket;
-                // Reset old bucket.
-                let nodes = state.nodes.filter(e=>e.bucket===prevBucket)
-
-                // Normalize rankings.
-                let i =0;
-                for(let node of nodes){
-                    node.ranking = i;
-                    i++
-                }
-
-                svg.selectAll(".bucketItem.bucket"+currBucket)
-                    .attr("transform", d=>{
-                        return (`translate(
-                            ${getBucketPos(d).x+(state.buckets.filter(
-                                e=>e.id===d.bucket)[0].width/5
-                                )*((d.ranking)%5) + state.buckets.filter(e=>e.id===d.bucket)[0].width/10}
-                            , 
-                            ${getBucketPos(d).y+(state.buckets.filter(
-                                e=>e.id===d.bucket)[0].height/5
-                                )*(Math.floor(d.ranking/5))})`
-                        )})
-
-                prevBucket = currBucket
             }
             // Check if the element has exited its original box. This must be in else if with collision detection to prevent no op.
             if(hasExited(item)){
@@ -466,7 +460,6 @@ class ClassSelect extends React.Component{
         .on("end", function(){
             let item = d3.select(this)
             let itemData = state.nodes.filter(e=>e.id===getId(item))[0]
-
             // Stop dragging and set its bucket to its last seen bucket.
             item.classed("dragging", false);
             itemData.bucket = prevBucket;
@@ -476,7 +469,7 @@ class ClassSelect extends React.Component{
                 // Get its last known bucket and set it to the last element in that bucket.
                 let nodes = state.nodes.filter(e=>e.bucket===prevBucket)
                 itemData.ranking = nodes.length? (nodes.length-1): 0;
-
+                
                 // Normalize rankings.
                 let i =0;
                 for(let node of nodes.sort((a,b)=>a.ranking-b.ranking)){
@@ -485,26 +478,14 @@ class ClassSelect extends React.Component{
                 }
             }
 
+            const message = {item: itemData.id, bucket: prevBucket, id:context.user.sId}
+            state.ws.send(JSON.stringify(message))
+
             svg.selectAll(".bucketItem")
-                    .attr("transform", d=>{
-                        return (`translate(
-                            ${getBucketPos(d).x+(state.buckets.filter(
-                                e=>e.id===d.bucket)[0].width/5
-                                )*((d.ranking)%5) + state.buckets.filter(e=>e.id===d.bucket)[0].width/10}
-                            , 
-                            ${getBucketPos(d).y+(state.buckets.filter(
-                                e=>e.id===d.bucket)[0].height/5
-                                )*(Math.floor(d.ranking/5))})`
-                        )})
+                .data(state.nodes)
+                .attr("transform", d=>translateNode(d))
         })
 
-        for(let node of this.state.data.nodes){
-            if(!this.state.levels[node.level]){
-                this.state.levels[node.level] = [node]
-            }else{
-                this.state.levels[node.level].push(node);
-            }
-        }
         this.setState({help:false})
     }
 
@@ -513,13 +494,19 @@ class ClassSelect extends React.Component{
         this.dragHandler(svg.selectAll(".draggable"));
     }
 
+    componentWillUnmount(){
+        this.state.ws.close();
+    }
+
     render(){
         const canvas = this.tree.current;
         let arr = [];
         let locations = {};
         const radius = 20;
-        Object.keys(this.state.levels).sort().map((e)=>{
-            
+        Object.keys(this.state.levels).sort().forEach((e)=>{
+            if(!canvas){
+                return;
+            }
             let count = 1;
             for(let node of this.state.levels[e]){
                 // Get the center for each level
@@ -535,10 +522,9 @@ class ClassSelect extends React.Component{
                     <g transform={`translate(${centerX},${centerY})`}>
                         <circle
                             r={radius}
-                            fill={node.color?node.color:"green"}
+                            fill={node.color?node.color:"white"}
                             stroke={"green"}
                             onClick={(e)=>{
-                                this.setState({test:false})
                             }}
                             onMouseOver={()=>{
                                 
@@ -596,36 +582,39 @@ class ClassSelect extends React.Component{
         }
         return (
             <>
-            <svg width={"40vw"} height={"80vh"} ref={this.svg}>
-                {this.svg.current&&this.state.buckets.map(e=>{
-                    console.log("bucket loaded")
-                    return(
-                        <g data={e} className="bucket" id={"bucket"+e.id} transform={`translate(${e.id===1?(0):(this.svg.current.width.baseVal.value/2)}, ${(e.id===1||e.id===2)?(50):((this.svg.current.height.baseVal.value/6)*(e.id-2)+100)})`}>
-                            <rect width={e.width} height={e.height} fill={"grey"}></rect>
-                        </g>
-                    )})}
-                {this.svg.current&&this.state.nodes.map(d=>{
-                    return (<g data={d} className={"draggable bucketItem bucketItem"+d.ranking + " bucket"+d.bucket} onDrag={this.dragHandler} id={"bucketItem"+d.id} transform={(
-                                `translate(
-                                    ${this.getBucketPos(d).x+(this.state.buckets.filter(
-                                        e=>e.id===d.bucket)[0].width/5
-                                        )*((d.ranking)%5) + this.state.buckets.filter(e=>e.id===d.bucket)[0].width/10}
-                                    , 
-                                    ${this.getBucketPos(d).y+(this.state.buckets.filter(
-                                        e=>e.id===d.bucket)[0].height/5
-                                        )*(Math.floor(d.ranking/5))})`)}>
-                                <rect width={2*d.radius} height={2*d.radius} fill={"yellow"} stroke={"green"}>
-                                    
-                                </rect>
-                                <text style={{userSelect:"none"}} y={20}>
-                                    {d.label}
-                                </text>
-                            </g>)
-                })}
-            </svg>
-            <svg ref={this.tree} width={"40vw"} height={"80vh"}>
-                {arr}
-            </svg>
+            {this.state.isLoading?
+                (
+                <div>
+                    <Loading></Loading>
+                </div>
+                ):
+                <>
+                    <svg width={"40vw"} height={"80vh"} ref={this.svg}>
+                        {this.svg.current&&this.state.buckets.forEach(e=>{
+                            e.width = this.svg.current.width.baseVal.value/2 - this.svg.current.width.baseVal.value/8;
+                            e.height = this.svg.current.height.baseVal.value/6 - this.svg.current.height.baseVal.value/32
+                        })}
+                        {this.svg.current?this.state.buckets.map(e=>{
+                            return(
+                                <g className="bucket" id={"bucket"+e.id} transform={this.getBucketTranslate(e)}>
+                                    <rect width={e.width} height={e.height} fill={"grey"}></rect>
+                                </g>
+                            )}):<></>}
+                        {this.svg.current&&this.state.nodes.map(d=>{
+                            return (<g className={"draggable bucketItem bucketItem"+d.ranking + " bucket"+d.bucket} onDrag={this.dragHandler} id={"bucketItem"+d.id} 
+                                    transform={this.getBucketItemTranslate(d)}>
+                                        <rect width={d.width} height={d.height} fill={"yellow"} stroke={"green"}/>
+                                        <text style={{userSelect:"none"}} y={d.height/2}>
+                                            {d.label}
+                                        </text>
+                                    </g>)
+                        })}
+                    </svg>
+                    <svg ref={this.tree} width={"40vw"} height={"80vh"}>
+                        {arr}
+                    </svg>
+                </>}
+            
             </>
             )
     }
@@ -637,16 +626,33 @@ class ClassSelect extends React.Component{
      *                   y-y position of bucket
      */
     getBucketPos(elem){
-        let svg = d3.select(this.svg.current)
-        console.log(svg)
-        console.log(svg.selectAll(".bucket"))
-        console.log(elem)
-        let transform = svg.select("#bucket"+elem.bucket).attr("transform");
-        let x = +(transform.substring(transform.indexOf("(")+1, transform.indexOf(",")).trim())
-        let y = +(transform.substring(transform.indexOf(",")+1, transform.indexOf(")")).trim());
+        let bucket = this.state.buckets.filter(e=>e.id===elem.bucket)[0]
+        let x = bucket.index===0?(0):(this.svg.current.width.baseVal.value/2)
+        let y = (bucket.index===0||bucket.index===1)?(50):((this.svg.current.height.baseVal.value/6)*(bucket.index-1)+50)
         return {x:x, y:y}
     }
+
+    getBucketTranslate(e){
+        return `translate(
+            ${e.index===0?(0):
+                (this.svg.current.width.baseVal.value/2)}, 
+            ${(e.index===0||e.index===1)?(50):
+                ((this.svg.current.height.baseVal.value/6)*(e.index-1)+50)})`
+    }
+
+    getBucketItemTranslate(d){
+        return `translate(
+            ${this.getBucketPos(d).x+(this.state.buckets.filter(
+                e=>e.id===d.bucket)[0].width/5
+                )*((d.ranking)%this.maxPerRow) + ((d.ranking)%this.maxPerRow)*this.state.buckets.filter(e=>e.id===d.bucket)[0].width/10}
+            , 
+            ${this.getBucketPos(d).y+(this.state.buckets.filter(
+                e=>e.id===d.bucket)[0].height/5
+                )*(Math.floor(d.ranking/this.maxPerRow))+(Math.floor(d.ranking/this.maxPerRow))*this.state.buckets.filter(e=>e.id===d.bucket)[0].height/5})`
+    }
 }
+
+ClassSelect.contextType = UserContext;
 
 class InfoModal extends React.Component{
     constructor(props){

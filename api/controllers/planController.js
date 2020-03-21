@@ -5,7 +5,9 @@ var {UnmappedReq} = require('../schema/unmapped');
 var {Plan} = require('../schema/plan');
 var {PlanNode} = require('../schema/planNode');
 var {Student} = require('../schema/student');
+var {Bucket} = require('../schema/bucket')
 var ClassService = require('../services/classService');
+const mongoose = require("mongoose")
 
 mongoose.Promise = global.Promise;
 
@@ -702,14 +704,25 @@ module.exports.addPlans = async function(student, ids){
     })
 }
 
+/**
+ * Return the plan matching the passed in id.
+ * @param {mongoose.Schema.Types.ObjectId} id
+ * @returns {Document} plan matching passed in id
+ */
 module.exports.getItem = async (id) =>{
     return await Plan.findById(id).exec();
 }
 
+/**
+ * Return the plan matching the passed in id.
+ * @param {mongoose.Schema.Types.ObjectId} id
+ * @returns {Array<Document>} array of classes matching passed in id
+ */
 module.exports.getClasses = async (id)=>{
     var classes = [];
     var plan = await Plan.findById(id).exec();
     for(let node of plan.nodes){
+        // Get the class corresponding to each top level class in the plan.
         node = await PlanNode.findById(node).exec();
         let classNode = await Class.findById(node.class).exec();
         classes.push(classNode)
@@ -717,9 +730,16 @@ module.exports.getClasses = async (id)=>{
     return classes;
 }
 
+/**
+ * Created a new plan with the matching plan nodes.
+ * @param {String} name name of new plan.
+ * @param {Array<mongoose.Schema.Types.ObjectId>} requirements ids for required classes.
+ * @returns {Document} plan matching passed in id
+ */
 module.exports.addPlan = async (name, requirements)=>{
     var nodes = [];
     for(let req of requirements){
+        // Create or find the plan nodes that correspond the requirement ids.
         let [node] = await PlanNode.find({class:req}).exec();
         if(!node){
             node = await PlanNode.create({class:req, children:[]})
@@ -729,6 +749,12 @@ module.exports.addPlan = async (name, requirements)=>{
     await Plan.create({name:name, nodes:nodes})
 }
 
+/**
+ * Update the plan with the new name and requirements.
+ * @param {mongoose.Schema.Types.ObjectId} id plan id
+ * @param {String} name plan name
+ * @param {Array<mongoose.Schema.Types.ObjectId>} requirements list of classes
+ */
 module.exports.updatePlan = async (id, name, requirements) =>{
     var nodes = [];
     for(let req of requirements){
@@ -739,4 +765,74 @@ module.exports.updatePlan = async (id, name, requirements) =>{
         nodes.push(node.id);
     }
     await Plan.findByIdAndUpdate(id, {name:name, nodes:nodes}).exec();
+}
+
+/**
+ * Retrieve a user's buckets.
+ * @param {mongoose.Schema.Types.ObjectId} id student id
+ * @returns {Array<Document>} array of bucket items, essentially plan nodes with a bucket property.
+ */
+module.exports.retrieveBuckets = async (id) =>{
+    let buckets = await Bucket.find({studentId:id}).exec();
+    
+    // By default, create a single new bucket.
+    if(buckets.length==0){
+        let arr = [];
+        let student = await Student.findById(id).exec();
+        let bucket = new Bucket();
+        bucket.studentId = id;
+        bucket.name = "primary";
+        bucket.nodes = [];
+        bucket = await bucket.save();
+        for(let plan of student.plans){
+            plan = await Plan.findById(plan)
+            for(let elem of plan.nodes){
+                elem.bucket = bucket.id
+                arr.push(elem)
+                arr = arr.reduce((unique, item)=>unique.includes(item)?unique:[...unique, item], [])
+            }
+        }
+        // Add all nodes from plan into first bucket.
+        let filled = [];
+        while(arr.length){
+            let item = arr[0]
+            filled.push(item)
+            arr = arr.slice(1)
+            arr = arr.concat(item.children.map(e=>{e.bucket = item.bucket; return e;}))
+        }
+        arr = arr.reduce((unique, item)=>unique.some(e=>e.id===item.id)?unique:[...unique, item], [])
+        bucket.nodes = arr;
+        buckets = [await bucket.save()]
+    }
+
+    // Get all nodes from buckets.
+    let data = []
+    for(let bucket of buckets){
+        for(let item of bucket.nodes){
+            item.bucket = bucket
+            data.push(item)
+        }
+    }
+
+    return data;
+}
+
+/**
+ * Update the passed in bucket with the new item and remove the item from its old bucket.
+ * @param {mongoose.Schema.Types.ObjectId} id student id
+ * @param {mongoose.Schema.Types.ObjectId} bucket bucket id
+ * @param {mongoose.Schema.Types.ObjectId} item item id
+ */
+module.exports.updateBucket = async (id, bucket, item) =>{
+    let oldBuckets = await Bucket.find({studentId:id}).exec();
+    for(let elem of oldBuckets){
+        if(elem.nodes.some(e=>e.id===item)){
+            elem.nodes = elem.nodes.filter(e=>e.id!==item)
+            await elem.save();
+            break;
+        }
+    }
+    let b = await Bucket.findById(bucket).exec();
+    b.nodes.push(item);
+    await b.save();
 }

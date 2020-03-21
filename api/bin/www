@@ -7,6 +7,7 @@
 var app = require('../app');
 var debug = require('debug')('api:server');
 var http = require('http');
+var WebSocketController = require('../controllers/WebSocketController')
 
 /**
  * Get port from environment and store in Express.
@@ -89,3 +90,11 @@ function onListening() {
     : 'port ' + addr.port;
   debug('Listening on ' + bind);
 }
+
+
+/** 
+ * Start websocket server.
+ */ 
+const WebSocket = require('ws')
+const wss = new WebSocket.Server({port:5050})
+WebSocketController.start(wss);
