@@ -16,6 +16,19 @@ module.exports.authOptionsPost = (body) => {
     }
 }
 
+module.exports.authOptionsPut = (body) => {
+    return{
+        credentials: "include",
+        method: 'PUT',
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Credentials": true
+        },
+        body: body
+    }
+}
+
 module.exports.authOptionsGet = {
     credentials: "include",
     headers: {

@@ -10,7 +10,8 @@ const bucketSchema = new Schema({
   // List of classes in the bucket.
   nodes: [{type:Schema.Types.ObjectId, ref:"plannodes"}],
   // Corresponding semester, probably index.
-  semester: String,
+  semesterStart: Date,
+  semesterEnd: Date,
   studentId: {type:Schema.Types.ObjectId, ref:"students"}
 });
 

@@ -1,10 +1,7 @@
 import React from 'react';
-import config from './config';
-import Loading from '../shared/Loading';
-import { Tab, TabList, TabPanel, Tabs } from 'react-tabs';
 import 'react-tabs/style/react-tabs.css';
 
-class CalendarGrid extends React.Component{
+export default class ErrorPage extends React.Component{
     render(){
     return(
         <>
@@ -13,5 +10,3 @@ class CalendarGrid extends React.Component{
         )
     }
 }
-
-export default CalendarGrid

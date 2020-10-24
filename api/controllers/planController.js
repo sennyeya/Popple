@@ -7,7 +7,6 @@ var {PlanNode} = require('../schema/planNode');
 var {Student} = require('../schema/student');
 var {Bucket} = require('../schema/bucket')
 var ClassService = require('../services/classService');
-const mongoose = require("mongoose")
 
 mongoose.Promise = global.Promise;
 
@@ -333,9 +332,9 @@ module.exports.generateSemester = async function(id){
     if(!student){
         throw new Error("No student found with that ID.");
     }
-
+    
+    var tree = {name:"root", children:[]};
     for(let plan of student.plans){
-        var tree = {name:"root", children:[]};
         for(let topNode of plan.nodes){
             tree.children.push(await PlanNode.findById(topNode).exec());
         }
@@ -493,6 +492,45 @@ getCreditSum = function(plan){
         total+=val.class.credit;
     }
     return total;
+}
+
+/**
+ * This method generates the next semester plan for the student by recursively exploring the tree,
+ * generating the set of options the student can take and then recursively exploring those options
+ * to select the best possible fit for the student's desired credit count.
+ * @param {mongoose.Schema.Types.ObjectId} id the id of the student.
+ * @returns {Promise<Array<Document>>} array of plan nodes.
+*/
+module.exports.generateFullPlan = async function(id){
+    // Load student. TODO
+    const student = await Student.findById(id).exec();
+
+    if(!student){
+        throw new Error("No student found with that ID.");
+    }
+    
+    var tree = {name:"root", children:[]};
+    for(let plan of student.plans){
+        for(let topNode of plan.nodes){
+            tree.children.push(await PlanNode.findById(topNode).exec());
+        }
+    }
+
+    var options = await returnOptions(student, tree);
+
+    var plan = await generatePlan(options, student.desiredCredits);
+
+    while(options.length){
+        student.completedClasses = await Class.find({id:{$in:options.map(e=>e.id)}})
+
+        options = await returnOptions(student, tree);
+
+        plan = await generatePlan(options, student.desiredCredits);
+    }
+
+    return new Promise((resolve, reject)=>{
+        resolve(plan);
+    })
 }
 
 /*
@@ -768,20 +806,40 @@ module.exports.updatePlan = async (id, name, requirements) =>{
 }
 
 /**
- * Retrieve a user's buckets.
+ * Generates a full 8 semesters of buckets.
+ * @param {Array<Document>} buckets 
+ * @param {ObjectId} studentId 
+ */
+const generateBuckets = async (buckets, studentId)=>{
+    var array = [...buckets]
+    // Ensure that there are 8 semesters worth of buckets in the passed in list.
+    if(buckets.length<9){
+        for(let diff = buckets.length-1;diff<8;diff++){
+            let bucket = new Bucket();
+            bucket.studentId = studentId;
+            bucket.name = `Semester ${diff+1}`;
+            bucket.nodes = [];
+            bucket = await bucket.save();
+            array.push(bucket)
+        }
+    }
+    return array
+}
+
+/**
+ * Retrieve a user's bucket items.
  * @param {mongoose.Schema.Types.ObjectId} id student id
  * @returns {Array<Document>} array of bucket items, essentially plan nodes with a bucket property.
  */
-module.exports.retrieveBuckets = async (id) =>{
-    let buckets = await Bucket.find({studentId:id}).exec();
-    
+module.exports.retrieveBucketItems = async (id) =>{
+    let buckets = await Bucket.find({studentId:id}).sort({name:1}).exec();
     // By default, create a single new bucket.
     if(buckets.length==0){
         let arr = [];
         let student = await Student.findById(id).exec();
         let bucket = new Bucket();
         bucket.studentId = id;
-        bucket.name = "primary";
+        bucket.name = "Primary";
         bucket.nodes = [];
         bucket = await bucket.save();
         for(let plan of student.plans){
@@ -789,32 +847,43 @@ module.exports.retrieveBuckets = async (id) =>{
             for(let elem of plan.nodes){
                 elem.bucket = bucket.id
                 arr.push(elem)
-                arr = arr.reduce((unique, item)=>unique.includes(item)?unique:[...unique, item], [])
             }
         }
+        arr = arr.reduce((unique, item)=>unique.includes(item)?unique:[...unique, item], [])
         // Add all nodes from plan into first bucket.
         let filled = [];
         while(arr.length){
             let item = arr[0]
+            item = await PlanNode.findById(item)
             filled.push(item)
             arr = arr.slice(1)
             arr = arr.concat(item.children.map(e=>{e.bucket = item.bucket; return e;}))
         }
-        arr = arr.reduce((unique, item)=>unique.some(e=>e.id===item.id)?unique:[...unique, item], [])
-        bucket.nodes = arr;
+        filled = filled.reduce((unique, item)=>unique.some(e=>e.id===item.id)?unique:[...unique, item], [])
+        bucket.nodes = filled;
         buckets = [await bucket.save()]
     }
+
+    buckets = await generateBuckets(buckets, id);
 
     // Get all nodes from buckets.
     let data = []
     for(let bucket of buckets){
         for(let item of bucket.nodes){
             item.bucket = bucket
-            data.push(item)
+            data.unshift(item)
         }
     }
 
     return data;
+}
+
+/**
+ * Retrieve a user's buckets.
+ * @param {ObjectId} id StudentID
+ */
+module.exports.retrieveBuckets = async (id) =>{
+    return await Bucket.find({studentId:id}).sort({name:1}).exec();
 }
 
 /**
@@ -828,11 +897,19 @@ module.exports.updateBucket = async (id, bucket, item) =>{
     for(let elem of oldBuckets){
         if(elem.nodes.some(e=>e.id===item)){
             elem.nodes = elem.nodes.filter(e=>e.id!==item)
-            await elem.save();
+            try{
+                await elem.save();
+            }catch(e){
+                console.log(e)
+            }
             break;
         }
     }
     let b = await Bucket.findById(bucket).exec();
     b.nodes.push(item);
-    await b.save();
+    try{
+        await b.save();
+    }catch(e){
+        console.log(e)
+    }
 }
