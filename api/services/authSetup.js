@@ -199,7 +199,7 @@ google.options({
     auth: oauth2Client
 });
 
-module.exports = {oauth2Client, authUrl:url, initialize:initialize, session:session, setClient:setClient}
+module.exports = {oauth2Client, authUrl:url, initialize, session, setClient}
 
 function refreshToken(user){
     if(!user){

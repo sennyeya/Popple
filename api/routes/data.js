@@ -74,12 +74,25 @@ router.get('/plans', async function(req, res){
 /**
   * This method creates a plan for the passed in name of the plan.
   */
-router.post('/bucket', async function(req, res, next){
-    const buckets = await PlanController.retrieveBuckets(req.body.sId);
+router.post('/bucketItems', async function(req, res, next){
+    const buckets = await PlanController.retrieveBucketItems(req.body.sId);
     let retVal = buckets.map(e=>{
         return {id:e.id, label:e.class.name, bucket:e.bucket.id, children:e.children.map(e=>e.id)}
     })
     res.json(retVal);
+})
+
+router.post('/buckets', async function(req, res, next){
+    let buckets = await PlanController.retrieveBuckets(req.body.sId);
+    buckets = buckets.map(e=>{
+        return {id:e.id, label:e.name}
+    })
+    res.json(buckets);
+})
+
+router.put('/bucket/:id', async function(req, res){
+    await PlanController.updateBucket(req.params.id, req.body.bucket, req.body.item)
+    res.status(201)
 })
 
 module.exports = router;

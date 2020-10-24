@@ -32,7 +32,7 @@ export default class StudentDashboard extends React.Component{
             throw new Error();
         }
         return res.json();
-      }).then(json=>{
+      }).then(()=>{
           this.setState({isAuthenticated:true})
           // Get logged in user data.
           fetch(config.api+"/users/current", authOptionsGet).then(res=>{
@@ -41,14 +41,14 @@ export default class StudentDashboard extends React.Component{
             }
             return res.json();
           }).then(json=>{
-              this.setState({
-                user:{
-                  sId: json.id, 
-                  name: json.name,
-                  isAdmin:json.isAdmin
-                },
-                isLoading:false
-              })
+            this.setState({
+              user:{
+                sId: json.id, 
+                name: json.name,
+                isAdmin:json.isAdmin
+              },
+              isLoading:false
+            })
           })
       }).catch(err=>{
           this.setState({
@@ -80,9 +80,6 @@ export default class StudentDashboard extends React.Component{
                   </li>
                   {this.state.isAuthenticated?(
                   <>
-                    <li>
-                      <Link to="/student/calendar">Calendar</Link>
-                    </li>
                     <li>
                       <Link to="/student/plan">Plan</Link>
                     </li>
