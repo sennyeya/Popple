@@ -7,9 +7,9 @@ export default function Loading() {
   );
 }
 
-export function LoadingIndicator(){
+export function LoadingIndicator({style}){
   return (
-    <div style={{padding:"2%", margin:"auto", textAlign:"center"}}>
+    <div style={{...style, padding:"2%", margin:"auto", textAlign:"center"}}>
       <Loader type="TailSpin" color="#000000" height={40} width={40}/>
     </div>
   )

@@ -3,34 +3,7 @@ nav {
   background: #323232;
   text-align: center; /* to center the UL in the nav */
   position:sticky;
+  max-height: 4vh;
   position:-webkit-sticky;
   top:0;
-}
-
-nav ul {
-  display: flex;
-  max-width: 1200px; /* change to desired width */
-  /* removed height from here, apply to a elements */
-  justify-content: space-around;
-  align-items: center;
-  padding: 0;
-  margin: 0 auto; /* 0 auto allows it to self-center in the nav */
-  list-style-type: none;
-}
-
-nav li {}
-
-nav a {
-  display: inline-block;
-  height: 44px; /* apply the height here, pushes the li / ul to be the correct height */
-  line-height: 44px; /* to get vertical centering */
-  color: white;
-  font-size: 15px;
-  font-weight: 100;
-  text-decoration: none;
-  transition: 0.3s;
-}
-
-nav a:hover {
-  color: #B8B8B8;
 }

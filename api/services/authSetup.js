@@ -169,9 +169,7 @@ function initialize(){
 
 function session(){
     return (req, res, next)=>{
-        console.log(req.session)
         if (req.session && req.session.user) {
-            console.log(`Retrieved user, ${req.session.user.displayName}`)
             User.findOne({ googleId: req.session.user }, function(err, user) {
               if (user) {
                 console.log(`Retrieved user, ${user.displayName}`)

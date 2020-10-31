@@ -24,17 +24,17 @@ class PlanItem extends React.Component{
         return (
             <>
                 <li key={this.state.key} className={this.state.className==="selected"?style.selected:style.unselected}>
-                        {
-                            this.state.isCollapseOpen?
-                            <IoMdArrowDropdownCircle onClick={(e)=>{this.setState({isCollapseOpen:!this.state.isCollapseOpen});e.preventDefault()}} style={{margin:"auto 0", padding:"0px 10px"}}/>:
-                            <IoMdArrowDroprightCircle onClick={()=>this.setState({isCollapseOpen:!this.state.isCollapseOpen})} style={{margin:"auto 0", padding:"0px 10px"}}/>
-                        }
-                    <div onClick={this.onSelect} style={{display:"inline-flex", width:"95%", flexDirection:"row", justifyContent:"space-between"}}>
+                    {
+                        this.state.isCollapseOpen?
+                        <IoMdArrowDropdownCircle onClick={(e)=>{this.setState({isCollapseOpen:!this.state.isCollapseOpen});e.preventDefault()}} style={{margin:"auto 0", padding:"0px 1%"}}/>:
+                        <IoMdArrowDroprightCircle onClick={()=>this.setState({isCollapseOpen:!this.state.isCollapseOpen})} style={{margin:"auto 0", padding:"0px 1%"}}/>
+                    }
+                    <div onClick={this.onSelect} style={{display:"inline-flex", width:"100%", flexDirection:"row", justifyContent:"space-between"}}>
                         <span className={style.classTitle}>{this.state.name} ({this.state.credits})</span>
                         {
                             isSelected?
-                            <IoMdSquareOutline style={{margin:"auto 0", width:"25px", height:"25px", float:'right', padding:"10px"}} value={isSelected?"Remove Class":"Keep Class"}/>:
-                            <IoIosCheckboxOutline style={{margin:"auto 0", width:"25px", height:"25px", float:'right', padding:"10px"}} value={isSelected?"Remove Class":"Keep Class"}/>
+                            <IoMdSquareOutline style={{margin:"auto 0", width:"25px", height:"25px", padding:"0 2%"}} value={isSelected?"Remove Class":"Keep Class"}/>:
+                            <IoIosCheckboxOutline style={{margin:"auto 0", width:"25px", height:"25px", padding:"0 2%"}} value={isSelected?"Remove Class":"Keep Class"}/>
                         }
                     </div>
                 </li>

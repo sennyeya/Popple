@@ -1,18 +1,4 @@
 import React from 'react';
-import {LoadingIndicator} from '../shared/Loading'
-import config from '../config';
-
-import style from './LandingPage.module.css'
-
-const authOptions = 
-{
-    credentials: "include",
-    headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Credentials": true
-    }
-}
 
 class GraphItem extends React.Component{
     

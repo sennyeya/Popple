@@ -5,6 +5,7 @@ import UserContext from '../contexts/UserContext'
 import {Droppable, Draggable, DragDropContext} from 'react-beautiful-dnd'
 import Modal from 'react-modal';
 import API from '../shared/API';
+import style from "./Graph.module.css"
 
 Modal.setAppElement('#root')
 
@@ -67,7 +68,8 @@ class ClassSelect extends React.Component{
             levels:{},
             modalIsOpen:false,
             modalMessage:"",
-            missingClasses:[]
+            missingClasses:[],
+            isLoading:true
         }
 
         for(let node of this.state.data.nodes){
@@ -78,12 +80,7 @@ class ClassSelect extends React.Component{
             }
         }
 
-        this.dragHandler = null;
-
-        this.svg = React.createRef();
         this.tree = React.createRef();
-
-        this.maxPerRow = 3;
     }
 
     reorder(bucket, source, destination){
@@ -244,6 +241,7 @@ class ClassSelect extends React.Component{
         const radius = 20;
         Object.keys(this.state.levels).sort().forEach((e)=>{
             if(!canvas){
+                this.setState({isLoading:false})
                 return;
             }
             let count = 1;
@@ -258,7 +256,7 @@ class ClassSelect extends React.Component{
 
                 // Create the nodes.
                 arr.push(
-                    <g transform={`translate(${centerX},${centerY})`}>
+                    <g transform={`translate(${centerX},${centerY})`} key={`${centerX},${centerY}`}>
                         <circle
                             r={radius}
                             fill={node.color?node.color:"white"}
@@ -317,7 +315,7 @@ class ClassSelect extends React.Component{
             }
 
             // Create 'arrow'
-            arr.push(<line x1={x1} x2={x2} y1={y1} y2={y2} stroke={"black"}></line>)
+            arr.push(<line x1={x1} x2={x2} y1={y1} y2={y2} stroke={"black"} key={`${x1},${x2},${y1},${y2}`}/>)
         }
         return (
             <>
@@ -352,8 +350,9 @@ class ClassSelect extends React.Component{
                                     alignItems: "center",
 
                                 }}>
-                                    {this.state.buckets.filter(e=>e.label!=="Primary").map(bucket=>
+                                    {this.state.buckets.filter(e=>e.label!=="Primary").map((bucket, index)=>
                                         <BucketItem bucket={bucket} 
+                                                    key={`bucket-item-${bucket.id}`}
                                                     items={this.state.nodes.filter(node=>node.bucket===bucket.id)}
                                                     missing={this.state.missingClasses}
                                         />
@@ -362,9 +361,13 @@ class ClassSelect extends React.Component{
                             
                         </div>
                     </DragDropContext>
-                    <svg ref={this.tree} width={"40vw"} height={"80vh"} style={{flex:1}}>
-                        {arr}
-                    </svg>
+                    {
+                        this.state.isLoading?
+                        <LoadingIndicator style={{width:"40vw", height:'80vh'}}/>:
+                        <svg ref={this.tree} width={"40vw"} height={"80vh"} style={{flex:1}} className={style.graph}>
+                            {arr}
+                        </svg>
+                    }
                 </div>
                 <InfoModal 
                     isOpen={this.state.modalIsOpen} 

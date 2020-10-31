@@ -91,8 +91,8 @@ router.post('/buckets', async function(req, res, next){
 })
 
 router.post('/bucket', async function(req, res){
-    await PlanController.updateBucket(req.body.id, req.body.bucket, req.body.item)
-    res.status(201)
+    await PlanController.updateBucket(req.body.sId, req.body.bucket, req.body.id)
+    res.status(201).json({})
 })
 
 module.exports = router;

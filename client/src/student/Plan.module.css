@@ -12,16 +12,19 @@ ul.classes{
     margin-top: 10px;
     list-style-type: none;
     white-space: nowrap;
-    width: 800px;
+    width: 80%;
     padding-left:0;
     font-size: 18px;
+    font-weight: 400;
     overflow: hidden;
 }
 
 li{
     margin: .5%;
     border-radius: 5px;
-    align-content: center;
+    align-content: space-between;
+    display: flex;
+    flex-direction: row;
 }
 
 li.unselected{
@@ -35,7 +38,6 @@ li.selected{
 li span{
     display:inline-block;
     color:white;
-    margin:1%;
     padding:1%;
 }
 
@@ -52,17 +54,16 @@ li span{
     align-items: center;
     flex-direction: column;
     justify-content: center;
-    max-width: 1000px;
+    max-width: 100%;
     margin: 0 auto;
 }
 
 ul.collapsable{
     list-style-type: none;
-    white-space: nowrap;
-    width: 800px;
+    width: 100%;
     padding-left:0;
-    font-size: 18px;
-    overflow: hidden;
+    font-size: 16px;
+    white-space: pre-line;
 }
 
 ul.collapsable li{
@@ -70,4 +71,5 @@ ul.collapsable li{
     margin-left: 2%;
     background:rgba(43, 42, 42, 0.318);
     padding: 1%;
+    display:block;
 }

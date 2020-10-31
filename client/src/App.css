@@ -5,7 +5,7 @@ body{
 
 nav ul {
   display: flex;
-  height: 50px;
+  height: 3vh;
   justify-content: space-around;
   align-items: center;
   flex-direction: row;
@@ -23,4 +23,9 @@ nav a, nav a:visited {
   text-decoration: none;
   transition: .5s ease-in-out;
   word-wrap: normal;
+}
+
+h2, h1, h3, p{
+  margin-block-start:0; margin-block-end:0; margin-inline-start:0; margin-inline-end:0;
+  padding-block-start:0; padding-block-end:0; padding-inline-start:0; padding-inline-end:0;
 }

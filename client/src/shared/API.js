@@ -8,7 +8,11 @@ const setError = (resp) =>{
 
 const authOptions = {
     credentials:"include",
-    "Access-Control-Allow-Credentials": true
+    mode: 'cors',
+    headers:{
+        'Accept':'application/json',
+        'Content-Type':'application/json'
+    }
 }
 
 /**
@@ -24,7 +28,7 @@ export default {
     get(url, params={}){
         return new Promise((res, rej)=>{
             params = Object.keys(params).map(e=>e+"="+params[e]).join("&")
-            fetch(Config.api+url+(params?("?"+params):""), {...authOptions})
+            fetch(Config.api+url+(params?("?"+params):""), authOptions)
                 .then(resp=>{
                     if(!resp.ok) return setError(resp)
                     return resp.json()
@@ -44,10 +48,7 @@ export default {
             fetch(Config.api + url,{
                 ...authOptions,
                 method:"POST",
-                body: JSON.stringify(params),
-                headers: {
-                    'Content-Type': 'application/json'
-                },
+                body: JSON.stringify(params)
             }).then(resp=>{
                 if(!resp.ok) setError(resp)
                 return resp.json()

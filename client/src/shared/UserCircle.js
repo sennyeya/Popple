@@ -30,7 +30,7 @@ export default class UserCircle extends React.Component{
                 {this.state.showModal?(
                     <div className={style.profileModal} onBlur={()=>setTimeout(()=>this.setState({showModal:false}), 100)} ref={this.modal} tabIndex={0}>
                         <div className={style.profileModalContainer}>
-                            <p>Hi, {this.context.user.name}</p>
+                            <p>Hi, {this.context.user.name}!</p>
                             {this.context.user.isAdmin?(
                                 window.location.href.includes("admin")?
                                     (<button onClick={()=>{

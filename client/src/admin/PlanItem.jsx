@@ -3,25 +3,8 @@ import {LoadingIndicator} from '../shared/Loading'
 import Button from '@material-ui/core/Button';
 import ButtonGroup from '@material-ui/core/ButtonGroup';
 import AsyncSelect from '../shared/AsyncSelect'
-import { makeStyles } from '@material-ui/core/styles';
-import { Dialog, TextField, DialogActions, DialogTitle, DialogContent, DialogContentText, FormControl } from '@material-ui/core';
+import { Dialog, TextField, DialogActions, DialogTitle, DialogContent, DialogContentText } from '@material-ui/core';
 import API from '../shared/API';
-
-const useStyles = makeStyles(theme => ({
-    root: {
-      display: 'flex',
-      flexWrap: 'wrap',
-    },
-    margin: {
-      margin: theme.spacing(1),
-    },
-    withoutLabel: {
-      marginTop: theme.spacing(3),
-    },
-    textField: {
-      width: 200,
-    },
-  }));
 
 function PlanItem(props){
     const [selected, setSelected] = React.useState(null);
@@ -51,7 +34,6 @@ function PlanItem(props){
 
 function AddPlanModal(props){
     const [name, setName] = React.useState("");
-    const [options, setOptions] = React.useState([]);
     const [selected, setSelected] = React.useState([]);
     const {open, setOpen, setMenuLoading} = props;
     const [loading, setLoading] = React.useState(false);

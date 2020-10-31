@@ -1,8 +1,7 @@
 import React from 'react';
 import {LoadingIndicator} from '../shared/Loading';
 import PlanItem from './PlanItem';
-import PlanPicklist from './PlanPicklist'
-import {api, authOptionsPost} from '../config';
+import PlanPicklist from './PlanPicklist';
 import style from './Plan.module.css';
 import mainStyle from '../Main.module.css'
 import UserContext from '../contexts/UserContext'

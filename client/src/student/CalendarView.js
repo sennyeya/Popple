@@ -1,6 +1,5 @@
 import React from 'react';
 import {LoadingIndicator} from '../shared/Loading';
-import style from './LandingPage.module.css';
 import mainStyle from '../Main.module.css'
 import { Calendar, momentLocalizer } from 'react-big-calendar'
 import moment from 'moment'
