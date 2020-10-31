@@ -1,4 +1,4 @@
-const mongoose = require("mongoose");
+var mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 const Types = mongoose.Types
 

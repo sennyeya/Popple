@@ -1,6 +1,6 @@
 import React from 'react';
-import Loading from '../shared/Loading'
-import {config} from './config';
+import {LoadingIndicator} from '../shared/Loading'
+import config from '../config';
 
 import style from './LandingPage.module.css'
 

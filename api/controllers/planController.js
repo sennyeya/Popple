@@ -539,7 +539,7 @@ This method ties to an api hook, meant to retrieve the graphic version of the pl
 module.exports.retrievePlanGraph = function(studentId){
     return new Promise(async (resolve, reject)=>{
         var student = await Student.findById(studentId).exec();
-
+        
         var nodes = [];
         for(let plan of student.plans){
             nodes = nodes.concat(plan.nodes);

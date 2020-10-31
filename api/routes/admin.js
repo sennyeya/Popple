@@ -1,18 +1,10 @@
 var express = require('express');
-var xlsx = require('xlsx');
 var db = require('../db');
 var planController = require("../controllers/planController");
 var classController = require('../controllers/classController');
 
 var router = express.Router();
 db.getDb();
-
-router.get("/isAdmin", (req, res)=>{
-    if(!req.user.isAdmin){
-        res.status(401).json({message:"UNAUTHORIZED"})
-    }
-    res.json({authorized: true})
-})
 
 router.post("/addClass", async (req, res)=>{
     try{

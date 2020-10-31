@@ -90,8 +90,8 @@ router.post('/buckets', async function(req, res, next){
     res.json(buckets);
 })
 
-router.put('/bucket/:id', async function(req, res){
-    await PlanController.updateBucket(req.params.id, req.body.bucket, req.body.item)
+router.post('/bucket', async function(req, res){
+    await PlanController.updateBucket(req.body.id, req.body.bucket, req.body.item)
     res.status(201)
 })
 

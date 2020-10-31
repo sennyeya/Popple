@@ -1,6 +1,6 @@
 import React from 'react';
 import style from './Header.module.css';
-import {UserContext} from '../contexts/userContext';
+import UserContext from '../contexts/UserContext';
 import UserCircle from './UserCircle'
 export default class Header extends React.Component{
     render(){
@@ -8,7 +8,7 @@ export default class Header extends React.Component{
             <>
             <div className={style.header}>
                 <h1>Popple</h1>
-                {Object.keys(this.context.user).length?(<UserCircle/>):(<></>)}
+                {this.context.user && Object.keys(this.context.user).length?(<UserCircle/>):(<></>)}
             </div>
             </>
         )

@@ -2,7 +2,7 @@
  * This model stores the logical representation of the students plan buckets.
  */
 
-const mongoose = require("mongoose");
+var mongoose = require("mongoose");
 const Schema = mongoose.Schema;
 
 const bucketSchema = new Schema({

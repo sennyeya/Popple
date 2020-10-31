@@ -1,18 +1,24 @@
-import React from 'react';
-import {config, authOptionsGet} from '../config'
+import React, {useState, useMemo, useContext} from 'react'
+import API from '../shared/API'
 
 export const authenticateStudent = ()=>{
-    fetch(config.api+"/auth/login/status", authOptionsGet).then(e=>{
-        if(!e.ok){
-            throw new Error()
-        }
-        return e.json()
-    }).then(e=>{
+    API.get("/auth/login/status").then(e=>{
         this.setState({sId:e.id, isAuthenticated:true, isLoading: true})
     })
 }
 
-export const UserContext = React.createContext({
-    user:{},
-    updateUser:()=>{}
-});
+const UserContext = React.createContext()
+
+export default UserContext;
+
+export function UserBoundary({ children }) {
+  const [user, setUser] = useState(null)
+  const ctx = useMemo(() => ({ user, setUser }), [user])
+
+  return <UserContext.Provider value={ctx}>{children}</UserContext.Provider>
+}
+
+export function useUserOutlet() {
+    const ctx = useContext(UserContext)
+    return ctx.setUser
+}

@@ -1,13 +1,10 @@
 import React from 'react';
-import Loading from '../shared/Loading'
-import {config, authOptionsPost, authOptionsPut} from './config';
-import mainStyle from '../Main.module.css'
+import {LoadingIndicator} from '../shared/Loading'
 import PlanQuestionnaire from './PlanQuestionnaire';
-import {UserContext} from '../contexts/userContext'
+import UserContext from '../contexts/UserContext'
 import {Droppable, Draggable, DragDropContext} from 'react-beautiful-dnd'
-import * as d3 from 'd3';
 import Modal from 'react-modal';
-import { map } from 'd3';
+import API from '../shared/API';
 
 Modal.setAppElement('#root')
 
@@ -25,54 +22,30 @@ class GraphItem extends React.Component{
     }
 
     componentDidMount(){
-        fetch(config.api+"/data/plan", authOptionsPost(JSON.stringify({sId: this.context.user.sId})))
-        .then((response) =>{
-            if(!response.ok){
-                throw new Error();
-            }
-            return response.json();
-          })
-          .then((myJson) => {
-                if(!myJson.tree ||!myJson.tree.nodes.length){
+        const sId = {sId:this.context.user.id}
+        API.post("/data/plan", sId).then((json) => {
+                if(!json.tree ||!json.tree.nodes.length){
                     throw new Error("No tree data received.");
                 }
-                this.setState({treeData:myJson.tree})
-                fetch(config.api+"/data/bucketItems", authOptionsPost(JSON.stringify({sId: this.context.user.sId})))
-                .then((response) =>{
-                    if(!response.ok){
-                        throw new Error(response.status+": "+response.statusText);
-                    }
-                    return response.json();
-                  }).then(json=>{
-                      fetch(config.api+"/data/buckets", authOptionsPost(JSON.stringify({sId: this.context.user.sId})))
-                      .then(response=>{
-                        if(!response.ok){
-                            throw new Error(response.status+": "+response.statusText);
-                        }
-                        return response.json();
-                      }).then(json=>{
-                        this.setState({buckets:json, isLoading:false})
-                      })
+                this.setState({treeData:json.tree})
+                API.post("/data/bucketItems", sId).then(json=>{
                     this.setState({bucketData:json})
+                    API.post("/data/buckets", sId).then(json=>{
+                        this.setState({buckets:json, isLoading:false})
+                    })
                   })
           })
     }
 
     render(){
-        var content;
         if(this.state.isLoading){
-            content = <Loading/>
+            return <LoadingIndicator/>
         }
         else if(!Object.keys(this.state.treeData).length){
-            content = <PlanQuestionnaire/>;
+            return <PlanQuestionnaire/>;
         }else{
-            content = <ClassSelect data={this.state.bucketData} tree={this.state.treeData} buckets={this.state.buckets}/>;
+            return <ClassSelect data={this.state.bucketData} tree={this.state.treeData} buckets={this.state.buckets}/>;
         }
-        return (
-            <div className={mainStyle.container}>
-                {content}
-            </div>
-        )
     }
 }
 
@@ -83,10 +56,6 @@ export default GraphItem;
 class ClassSelect extends React.Component{
     constructor(props){
         super(props);
-
-        // Change this for prod.
-        let url = config.api.substring(config.api.indexOf("//")+2);
-        url = url.substring(0, url.indexOf(":"))
         this.state={
             nodes:this.props.data.map((e,id)=>{
                 return {id:e.id, label:e.label, bucket:e.bucket, children:e.children}
@@ -97,7 +66,8 @@ class ClassSelect extends React.Component{
             data: props.tree,
             levels:{},
             modalIsOpen:false,
-            modalMessage:""
+            modalMessage:"",
+            missingClasses:[]
         }
 
         for(let node of this.state.data.nodes){
@@ -127,9 +97,7 @@ class ClassSelect extends React.Component{
     };
     
     move(source, destination, sourceIndex, destinationIndex){
-        console.log({source, destination, sourceIndex, destinationIndex})
         let array = [...this.state.nodes]
-        console.log(array)
         var filteredArr = array.filter(e=>e.bucket===source)
         var filteredArrDest = array.filter(e=>e.bucket===destination)
         if(filteredArrDest.length){
@@ -143,12 +111,16 @@ class ClassSelect extends React.Component{
             }
         }
         filteredArr[sourceIndex].bucket = destination;
-        this.setState({nodes:array})
-        fetch(`${config.api}/data/bucket/${filteredArr[sourceIndex].id}`, 
-                authOptionsPut(JSON.stringify({
-                    sId: this.context.user.sId, 
+        let missingClasses = [...this.state.missingClasses];
+        missingClasses = missingClasses.filter(e=>e.id!==filteredArr[sourceIndex].id);
+
+        this.setState({nodes:array, missingClasses})
+        
+        API.post(`/data/bucket`, {
+                    id:filteredArr[sourceIndex].id,
+                    sId: this.context.user.id, 
                     bucket:destination
-                })))
+                })
     };
 
     isRequirementRemoved(source, destination){
@@ -188,7 +160,6 @@ class ClassSelect extends React.Component{
         // Need to add all possible dependents
         array = [...new Set(array)]
         for(let element of array){
-            console.log(JSON.stringify(element))
             this.move(
                 element.bucket, 
                 this.state.buckets.filter(e=>e.label==="Primary")[0].id, 
@@ -204,8 +175,9 @@ class ClassSelect extends React.Component{
         var bucket = this.state.buckets.filter(e=>e.id===destination.droppableId)[0];
         var previousBuckets = this.state.buckets.filter(e=>e.index<bucket.index&&e.index!==0)
         var filteredArr = this.state.nodes.filter(e=>previousBuckets.some(f=>f.id===e.bucket))
-        var missingClasses = this.state.nodes.filter(node=>(currentlyDragging.children.filter(e=>!filteredArr.some(f=>f.id===e))).some(child=>node.id===child)).map(e=>e.label).join(", ")
-        return `Class ${currentlyDragging.label} is missing the following requirement(s) in previous semesters: \n\t${missingClasses}`
+        var missingClasses = this.state.nodes.filter(node=>(currentlyDragging.children.filter(e=>!filteredArr.some(f=>f.id===e))).some(child=>node.id===child))
+        this.setState({missingClasses})
+        return `Class ${currentlyDragging.label} is missing the following requirement(s) in previous semesters: \n\t${missingClasses.map(e=>e.label).join(", ")}`
     }
 
     getModalRequirementMessage(destination){
@@ -349,13 +321,12 @@ class ClassSelect extends React.Component{
         }
         return (
             <>
-`               <div style={{display:"flex", width:"100vw", height:"80vh", justifyContent:"space-between"}}>
+`               <div style={{display:"flex", width:"90vw", height:"80vh", margin:"0 auto", justifyContent:"space-between"}}>
                     <DragDropContext 
                         onDragEnd={this.onDragEnd} 
                         onDragStart={(e)=>this.setState({currentlyDragging:e.draggableId})}
                         onDragUpdate={(e)=>e.destination?this.setState({destination:e.destination.id}):null}
                     >
-                        {console.log(this.state.nodes)}
                         <div style={{
                                 flex:"1", 
                                 display:"inline-flex", 
@@ -368,20 +339,23 @@ class ClassSelect extends React.Component{
                                 }}>
                                     {
                                         <BucketItem bucket={this.state.buckets[0]} 
-                                                    items={this.state.nodes.filter(node=>node.bucket===this.state.buckets[0].id)} 
+                                                    items={this.state.nodes.filter(node=>node.bucket===this.state.buckets[0].id)}
+                                                    missing={this.state.missingClasses} 
                                         />
                                     }
                                 </div>
                                 <div style={{
                                     flex:"2", 
                                     display:"inline-flex", 
-                                    justifyContent: "space-between", 
+                                    justifyContent: "center", 
                                     flexWrap:"wrap", 
-                                    alignContent: "flex-start"
+                                    alignItems: "center",
+
                                 }}>
                                     {this.state.buckets.filter(e=>e.label!=="Primary").map(bucket=>
                                         <BucketItem bucket={bucket} 
-                                                    items={this.state.nodes.filter(node=>node.bucket===bucket.id)} 
+                                                    items={this.state.nodes.filter(node=>node.bucket===bucket.id)}
+                                                    missing={this.state.missingClasses}
                                         />
                                     )}
                                 </div>
@@ -406,13 +380,13 @@ ClassSelect.contextType = UserContext;
 
 const grid = 8;
 
-function BucketItem({bucket,items, isDropDisabled}){
-    const getStyle = isDraggingOver => ({
+function BucketItem({bucket,items, isDropDisabled, missing}){
+    const getStyle = (isDraggingOver,isMissing) => ({
         background: isDraggingOver ? 'lightblue' : 'lightgrey',
         padding: grid,
         margin:grid,
         flex: 1,
-        flexBasis: bucket.label==="Primary"?"80vh":null
+        flexBasis: "50%"
     });
     return (
         <Droppable droppableId={bucket.id} key={bucket.id} isDropDisabled={isDropDisabled}>
@@ -423,7 +397,7 @@ function BucketItem({bucket,items, isDropDisabled}){
                     {...provided.droppableProps}
                 >
                     <h3>{bucket.label}</h3>
-                    <ClassList items={items}/>
+                    <ClassList items={items} missing={missing}/>
                     {provided.placeholder}
                 </div>
             }
@@ -431,21 +405,22 @@ function BucketItem({bucket,items, isDropDisabled}){
     )
 }
 
-const ClassList = React.memo(function ClassList({items}){
+const ClassList = React.memo(function ClassList({items, missing}){
     return items.map((item,index)=>
-        <ClassItem item={item} index={index} key={item.id}/>
+        <ClassItem item={item} index={index} key={item.id} missing={missing}/>
     )
 })
 
-function ClassItem({item, index}){
-    const getStyle= (isDragging, draggableStyle) => ({
+function ClassItem({item, index, missing}){
+    missing = missing.some(e=>e.id===item.id)
+    const getStyle= (isDragging, draggableStyle, isMissing) => ({
         // some basic styles to make the items look a bit nicer
         userSelect: 'none',
         padding: grid,
         margin: `0 0 ${grid}px 0`,
     
         // change background colour if dragging
-        background: isDragging ? 'lightgreen' : 'grey',
+        background: isDragging ? 'lightgreen' : (isMissing?'red':'grey'),
     
         // styles we need to apply on draggables
         ...draggableStyle
@@ -459,7 +434,8 @@ function ClassItem({item, index}){
                     {...provided.dragHandleProps}
                     style={getStyle(
                         snapshot.isDragging,
-                        provided.draggableProps.style
+                        provided.draggableProps.style,
+                        missing
                     )}
                 >
                     <p>

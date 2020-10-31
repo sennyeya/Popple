@@ -16,12 +16,8 @@ const scopes = [
 ];
 
 const url = oauth2Client.generateAuthUrl({
-  // 'online' (default) or 'offline' (gets refresh_token)
-  access_type: 'offline',
-
   // If you only need one scope you can pass it as a string
-  scope: scopes,
-  prompt: "consent"
+  scope: scopes
 });
 
 oauth2Client.on('tokens', (tokens) => {
@@ -41,6 +37,7 @@ oauth2Client.on('tokens', (tokens) => {
                     refresh_token: tokens.refresh_token, 
                     access_token: tokens.access_token,
                     id_token: tokens.id_token,
+                    isAdmin:true
                 }, 
             {upsert:true},
             function (err, user) {
@@ -100,7 +97,8 @@ oauth2Client.on('tokens', (tokens) => {
                             completedClasses:[],
                             options:[],
                             semesterPlan:[],
-                            desiredCredits:15
+                            desiredCredits:15,
+
                         }
                     )
                 }
@@ -171,7 +169,7 @@ function initialize(){
 
 function session(){
     return (req, res, next)=>{
-        console.log(req.originalUrl)
+        console.log(req.session)
         if (req.session && req.session.user) {
             console.log(`Retrieved user, ${req.session.user.displayName}`)
             User.findOne({ googleId: req.session.user }, function(err, user) {

@@ -1,6 +1,5 @@
 import React from 'react';
-import ReactDOM from 'react-dom'
-import {UserContext} from '../contexts/userContext';
+import UserContext from '../contexts/UserContext';
 import style from './UserCircle.module.css';
 import {config} from '../config'
 

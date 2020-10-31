@@ -5,10 +5,8 @@ var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var cors = require('cors');
 const cookieSession = require('cookie-session');
-const {google} = require("googleapis")
 
 // Database connection.
-var mongoose = require('mongoose');
 var config = require('./config');
 var db = require('./db');
 const middleware = require('./services/authSetup');
@@ -21,10 +19,6 @@ var calendarRouter = require("./routes/calendar")
 
 var app = express();
 db.connect();
-
-// view engine setup
-//app.set('views', path.join(__dirname, 'views'));
-//app.set('view engine', 'jade');
 
 app.use(cookieSession({  name: 'session',  keys: ["asdf"],  maxAge: 24 * 60 * 60 * 1000}));
 
