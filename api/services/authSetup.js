@@ -43,27 +43,7 @@ oauth2Client.on('tokens', (tokens) => {
             function (err, user) {
                 return null;
             });
-            Student.findOne({ googleId: attrs.sub }, (err, res)=>{
-                if(err){
-                    console.log("Error finding student: "+err)
-                    return;
-                }
-                if(!res){
-                    Student.create(
-                        {
-                            googleId: attrs.sub, 
-                            name: attrs.name,
-                            plans:[],
-                            completedClasses:[],
-                            options:[],
-                            semesterPlan:[],
-                            desiredCredits:15,
-                        }
-                    )
-                }
-            })
         })
-        
     }else{
         // store the refresh_token in my database!
         oauth2Client.verifyIdToken({
@@ -83,26 +63,6 @@ oauth2Client.on('tokens', (tokens) => {
             function (err, user) {
                 return null;
             });
-            Student.findOne({ googleId: attrs.sub }, (err, res)=>{
-                if(err){
-                    console.log("Error finding student: "+err)
-                    return;
-                }
-                if(!res){
-                    Student.create(
-                        {
-                            googleId: attrs.sub, 
-                            name: attrs.name,
-                            plans:[],
-                            completedClasses:[],
-                            options:[],
-                            semesterPlan:[],
-                            desiredCredits:15,
-
-                        }
-                    )
-                }
-            })
         })
     }
 });
@@ -141,11 +101,11 @@ function initialize(){
                             oauth2Client.setCredentials({id_token: user.id_token, access_token: user.access_token, refresh_token: user.refresh_token})
                             return next();
                         });
-                }).catch((err)=>{
+                }).catch(async (err)=>{
                     try{
-                        refreshToken(req.session.user).then((user)=>{
+                        refreshToken(await User.findById(req.session.user)).then((user)=>{
                             req.user = user;
-                            req.session.user = user;
+                            req.session.user = user.id;
                             return next();
                         });
                     }catch(err){
@@ -170,12 +130,11 @@ function initialize(){
 function session(){
     return (req, res, next)=>{
         if (req.session && req.session.user) {
-            User.findOne({ googleId: req.session.user }, function(err, user) {
+            User.findById(req.session.user, function(err, user) {
               if (user) {
-                console.log(`Retrieved user, ${user.displayName}`)
                 req.user = user;
-                req.session.user = user;  //refresh the session value
-                res.locals.user = user;
+                req.session.user = user.id;  //refresh the session value
+                res.locals.user = user.id;
               }
               // finishing processing the middleware and run the route
               return next();
@@ -186,16 +145,12 @@ function session(){
     }
 }
 
-function setClient(res, req, next){
-    next();
-}
-
 // set auth as a global default
 google.options({
     auth: oauth2Client
 });
 
-module.exports = {oauth2Client, authUrl:url, initialize, session, setClient}
+module.exports = {oauth2Client, authUrl:url, initialize, session}
 
 function refreshToken(user){
     if(!user){

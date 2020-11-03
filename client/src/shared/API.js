@@ -30,10 +30,10 @@ export default {
             params = Object.keys(params).map(e=>e+"="+params[e]).join("&")
             fetch(Config.api+url+(params?("?"+params):""), authOptions)
                 .then(resp=>{
-                    if(!resp.ok) return setError(resp)
+                    if(!resp.ok) rej(resp)
                     return resp.json()
                 })
-                .then(json=>res(json))
+                .then(json=>res(json)).catch(e=>rej(e))
         })
     },
 
@@ -50,10 +50,10 @@ export default {
                 method:"POST",
                 body: JSON.stringify(params)
             }).then(resp=>{
-                if(!resp.ok) setError(resp)
+                if(!resp.ok) rej(resp)
                 return resp.json()
             })
-            .then(json => res(json))
+            .then(json => res(json)).catch(e=>rej(e))
         })
     }
 }

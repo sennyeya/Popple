@@ -1,11 +1,24 @@
 .header{
-    display:flex;
+    display:block;
     position: relative;
-    max-height:6vh;
+    height: 7vh;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+    min-height: 50px;
+}
+
+.banner{
+    display:flex;
+    max-height:4vh;
+    height: 4vh;
     flex-direction: row;
     flex-wrap: nowrap;
     justify-content: center;
     align-content: center;
     align-items: center;
-    padding: 10px;
+    flex: 1;
+    min-height: 20px;
 }

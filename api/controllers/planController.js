@@ -658,19 +658,20 @@ returnVisualTree = async function(planNodes, student){
                     map[edge._id] = i;
                     i= i+1;
                 }
-                if(!edges.some(e=>e.from===map[edge._id]&&e.to===map[curNode._id])){
-                    edges.push({from:map[edge._id], to:map[curNode._id], fixed:true});
+                if(!edges.some(e=>e.from===edge._id&&e.to===curNode._id)){
+                    edges.push({source:edge._id, target:curNode._id});
                 }
                 nextLevel.push(edge._id);
             }
             if(!nodes.some(e=>e.id === map[curNode._id])){
                 const classObj = await Class.findById(curNode.class).exec();
+                let nodeInfo = {id:curNode._id, title:classObj.name}
                 if(ClassService.isCompleted(curNode, student)){
-                    nodes.push({id:map[curNode._id], label:classObj.name, level:getDepth(curNode),color:"#111111", fixed:true});
+                    nodes.push({...nodeInfo, type:"completed"});
                 }else if(student.options.includes(curNode.id)){
-                    nodes.push({id:map[curNode._id], label:classObj.name, level:getDepth(curNode), color:"#aaaaaa", fixed:true});
+                    nodes.push({...nodeInfo, type:"inProgress"});
                 }else{
-                    nodes.push({id:map[curNode._id], label:classObj.name, level:getDepth(curNode), fixed:true});
+                    nodes.push({...nodeInfo, type:"toDo"});
                 }
             }
         }
@@ -688,16 +689,16 @@ getDepth = function(node){
     var discovered = [];
     while(queue.length){
         let node = queue.shift();
-        if(discovered[node.id]){
+        if(discovered[node.id]||!node.children.length){
             continue;
         }
-        level+=1;
         for(let child of node.children){
             if(!discovered[node.id]){
                 discovered[node.id] = true;
                 queue.push(child);
             }
         }
+        level+=1;
     }
     return level;
 }
@@ -705,8 +706,7 @@ getDepth = function(node){
 // Idea is to use the student information. The options we already generated, combined with the classes that they want to take, to generate a possible solution.
 // If there is no solution then return nothing and will present to user with ?? modal? that there were no results.
 // Will need to be completed after student has been plugged in.
-module.exports.regenerateTree = async function(id, vals){
-    const student = await Student.findById(id).exec();
+module.exports.regenerateTree = async function(student, vals){
     var options = student.options.filter(e=>vals.includes(e.toString()));
 
     for(let option in options){
@@ -732,6 +732,8 @@ module.exports.addPlans = async function(student, ids){
         for(let elem of ids){
             plans.push(elem.value)
         }
+        student.plans = plans;
+
         Student.findOneAndUpdate({googleId:student}, {plans: plans}, (err, doc)=>{
             if(err){
                 rej(err)
@@ -740,6 +742,68 @@ module.exports.addPlans = async function(student, ids){
             }
         })
     })
+}
+
+module.exports.updateSurvey = async function(student, ids){
+    student.plans = ids.map(e=>e.value);
+    student.lastAnsweredPlanSurvey = new Date();
+    return await student.save();
+}
+
+module.exports.getPlanClasses = async function(student){
+    let queue = [];
+    for(let plan of student.plans){
+        for(let node of plan.nodes){
+            node = await PlanNode.findById(node).exec();
+            queue.push(node)
+        }
+    }
+    let visited = []
+    let data = []
+    while(queue.length){
+        let node = queue.pop();
+        if(visited.indexOf(node.id)!==-1){
+            continue;
+        }
+        visited.push(node.id);
+        data.push(node)
+        queue = queue.concat(node.children)
+    }
+    data = data.map(e=>e.class).map(e=>{
+        return {label:e.name, value:e.id}
+    })
+    data.sort((a, b)=>{
+        if ( a.label < b.label ){
+            return -1;
+        }
+        if ( a.label > b.label ){
+            return 1;
+        }
+        return 0
+    })
+    return data;
+}
+
+const findPlanNodeDependencies = (ids) => {
+    let visited = [];
+    let queue = [ids];
+    while(queue.length){
+        let node = queue.pop();
+        if(visited.indexOf(node.id)!==-1){
+            continue;
+        }
+        visited.push(node.id);
+        queue = queue.concat(node.children)
+    }
+    return visited;
+}
+
+module.exports.updateItemSurvey = async (student, ids) => {
+    ids = ids.map(e=>e.value)
+    ids = await Class.find({id:{$in:ids}}).exec();
+    student.completedClasses = ids;
+    student.lastAnsweredClassSurvey = new Date();
+    return await student.save();
 }
 
 /**
@@ -839,7 +903,7 @@ module.exports.retrieveBucketItems = async (id) =>{
         let student = await Student.findById(id).exec();
         let bucket = new Bucket();
         bucket.studentId = id;
-        bucket.name = "Primary";
+        bucket.name = "";
         bucket.nodes = [];
         bucket = await bucket.save();
         for(let plan of student.plans){
@@ -912,4 +976,9 @@ module.exports.updateBucket = async (id, bucket, item) =>{
     }catch(e){
         console.log(e)
     }
+}
+
+module.exports.getBucketItemInfo = async (student, id) =>{
+    let node = await PlanNode.findById(id).exec();
+    return {name:node.class.name, credits:node.class.credits, planProgress:0, graduationProgress:0};
 }

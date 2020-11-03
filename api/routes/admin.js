@@ -1,10 +1,8 @@
 var express = require('express');
-var db = require('../db');
 var planController = require("../controllers/planController");
 var classController = require('../controllers/classController');
 
 var router = express.Router();
-db.getDb();
 
 router.post("/addClass", async (req, res)=>{
     try{

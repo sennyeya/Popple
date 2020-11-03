@@ -1,10 +1,4 @@
-var db = require('../db');
-var uuid = require('uuid/v4');
-const fs = require("fs");
-var {config} = require("../config");
 const express = require("express");
-
-const {Calendar} = require('../schema/calendar');
 
 const calendarRepo = require('../repositories/calendarRepo')
 
@@ -21,25 +15,37 @@ router.get("/getList", async (req, res)=>{
 });
 
 router.get("/getOptions", async (req, res)=>{
-    res.send((await calendarRepo.getUserCalendars()).map((e,i)=>{return {value:e.id, label:e.summary, key:i}}));
+    res.send((await calendarRepo.getUserCalendars()).map((e,i)=>{
+        return {
+            value:e.id, 
+            label:e.summary, 
+            key:i
+        }
+    }));
 })
 
 router.get("/getLocalOptions", async (req, res)=>{
-    res.send((await calendarRepo.getLocalCalendarOptions(req.user.id)).map((e,i)=>{return {value:e.id, label:e.name, key:i}}));
+    res.send((await calendarRepo.getLocalCalendarOptions(req.user.id)).map((e,i)=>{
+        return {
+            value:e.id, 
+            label:e.name, 
+            key:i
+        }
+    }));
 })
 
 router.post("/addCalendar", async (req, res)=>{
     for(let id of req.body.id){
         await calendarRepo.addCalendar(req.user.id, id)
     }
-    res.send({success:true})
+    res.status(201).send({})
 })
 
 router.post("/shareCalendar", async (req, res)=>{
     for(let id of req.body.id){
         await calendarRepo.shareCalendar(req.user.id, id);
     }
-    res.send({success:true})
+    res.status(201).send({})
 })
 
 module.exports = router;

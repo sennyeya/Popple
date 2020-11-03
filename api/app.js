@@ -15,7 +15,8 @@ var usersRouter = require('./routes/users');
 var dataRouter = require('./routes/data');
 var adminRouter = require('./routes/admin');
 var authRouter = require('./routes/auth');
-var calendarRouter = require("./routes/calendar")
+var calendarRouter = require("./routes/calendar");
+var studentRouter = require('./routes/student')
 
 var app = express();
 db.connect();
@@ -24,7 +25,6 @@ app.use(cookieSession({  name: 'session',  keys: ["asdf"],  maxAge: 24 * 60 * 60
 
 app.use(middleware.session());
 app.use(middleware.initialize());
-app.use(middleware.setClient);
 
 app.use(logger('dev'));
 app.use(express.json());
@@ -38,6 +38,7 @@ app.use('/users', ensureAuthenticated, usersRouter);
 app.use('/data', ensureAuthenticated, dataRouter);
 app.use('/auth', authRouter)
 app.use('/calendar', ensureAuthenticated, calendarRouter)
+app.use('/student', ensureAuthenticated, studentRouter)
 
 // Authenticate requests to admin hook.
 app.use('/admin', ensureAdmin, adminRouter)

@@ -8,22 +8,21 @@ import {
 } from "react-router-dom";
 import TOS from './TOS';
 import AdminDashboard from './admin/Index';
-import StudentDashboard from './student/Index'
 import PlanItem from './admin/PlanItem';
 import ClassItem from './admin/ClassItem'
 import {api} from './config'
 import API from './shared/API'
 import HomePage from './HomePage'
 import LoginPage from './LoginPage'
-import CalendarGrid from './student/CalendarView';
-import Plan from './student/Plan';
-import GraphItem from './student/Graph';
+
 import UserContext,{ useUserOutlet } from './contexts/UserContext';
 import { LoadingIndicator } from './shared/Loading';
-import MenuBar from './shared/MenuBar';
 import ContentContainer from './shared/ContentContainer'
 import Footer from './shared/Footer';
 import ErrorBoundary from './ErrorBoundary'
+import Header from './shared/Header';
+import { Helmet } from 'react-helmet'
+import StudentContainer from './student/StudentContainer';
 
 export default function App(){
 
@@ -39,33 +38,30 @@ export default function App(){
 		API.get("/users/current").then(json=>{
 			setUser(json);
 			setLoading(false)
-		}).catch(()=>setUser(null))
+		}).catch(()=>{
+			setUser(null)
+			setLoading(false)
+		})
 	}, [setUser])
 
     return (
 		<ErrorBoundary>
+			<Helmet>
+				<title>Home | Popple</title>
+			</Helmet>
 			<Router>
 				<>
-				<MenuBar/>
-				{loading?<LoadingIndicator/>:<>
-				{/* A <Switch> looks through its children <Route>s and
-					renders the first one that matches the current URL. */}
+				<Header/>
 				<ContentContainer>
+				{
+					loading?
+					<LoadingIndicator/>:
 					<Switch>
 						<Route path="/" exact>
 							<HomePage/>
 						</Route>
-						<Route path="/student" exact>
-							<StudentDashboard/>
-						</Route>
-						<Route path="/student/calendar" exact>
-							<CalendarGrid/>
-						</Route>
-						<Route path="/student/plan" exact>
-							<GraphItem/>
-						</Route>
-						<Route path="/student/classes" exact>
-							<Plan/>
+						<Route path="/tos" exact>
+							<TOS/>
 						</Route>
 						<Route path="/login" exact>
 						{
@@ -74,23 +70,29 @@ export default function App(){
 							<LoginPage/>
 						}
 						</Route>
-						<Route path="/tos" exact>
-							<TOS/>
-						</Route>
-						<Route path="/admin" exact>
-							<AdminDashboard/>
-						</Route>
-						<Route path="/admin/plan" exact>
-							<PlanItem/>
-						</Route>
-						<Route path="/admin/class" exact>
-							<ClassItem/>
-						</Route>
-						<Route path="/logout" exact render={()=>window.open(api+"/auth/logout", " self")}/>
+						{
+							!user?
+							<Redirect to="/login"/>:
+							<>
+								<Route path="/student">
+									<StudentContainer/>
+								</Route>
+								<Route path="/admin" exact>
+									<AdminDashboard/>
+								</Route>
+								<Route path="/admin/plan" exact>
+									<PlanItem/>
+								</Route>
+								<Route path="/admin/class" exact>
+									<ClassItem/>
+								</Route>
+								<Route path="/logout" exact render={()=>window.open(api+"/auth/logout", " self")}/>
+							</>
+						}
 					</Switch>
+				}
 				</ContentContainer>
 				<Footer/>
-				</>}
 				</>
 			</Router>
 		</ErrorBoundary>

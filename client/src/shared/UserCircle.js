@@ -1,7 +1,7 @@
 import React from 'react';
 import UserContext from '../contexts/UserContext';
 import style from './UserCircle.module.css';
-import {config} from '../config'
+import {api} from '../config'
 
 export default class UserCircle extends React.Component{
     constructor(props){
@@ -31,18 +31,32 @@ export default class UserCircle extends React.Component{
                     <div className={style.profileModal} onBlur={()=>setTimeout(()=>this.setState({showModal:false}), 100)} ref={this.modal} tabIndex={0}>
                         <div className={style.profileModalContainer}>
                             <p>Hi, {this.context.user.name}!</p>
-                            {this.context.user.isAdmin?(
-                                window.location.href.includes("admin")?
-                                    (<button onClick={()=>{
-                                        window.open("/student", "_self");
-                                }}>Go to Student</button>):
-                                (<button onClick={()=>{
-                                        window.open("/admin", "_self");
-                                }}>Go to Admin</button>)):
-                            <></>}
+                            {
+                                this.context.user.isAdmin?
+                                (
+                                    window.location.href.includes("admin")?
+                                        (
+                                            <button onClick={()=>{
+                                                window.open("/student", "_self");
+                                                }}>
+                                                Go to Student
+                                            </button>
+                                        ):
+                                        (
+                                            <button onClick={()=>{
+                                                window.open("/admin", "_self");
+                                            }}>
+                                                Go to Admin
+                                            </button>
+                                        )
+                                ):
+                                <></>
+                            }
                             <button onClick={()=>{
-                                    window.open(config.api+"/auth/logout", "_self");
-                            }}>Logout</button>
+                                    window.open(api+"/auth/logout", "_self");
+                            }}>
+                                Logout
+                            </button>
                         </div>
                     </div>
                 ):<></>}

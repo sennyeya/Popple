@@ -24,7 +24,7 @@ class Plan extends React.Component{
     }
 
     componentDidMount(){
-        API.post("/data/generate", {sId: this.context.user.id}).then(json=>{
+        API.post("/student/plan/generate").then(json=>{
             var arr = json.plan || [];
             this.setState({options:arr, isLoading:false, selected:arr.map(e=>e._id)});
         });
@@ -81,7 +81,7 @@ class Plan extends React.Component{
             return;
         }
         this.setState({isLoading:true})
-        API.post("/data/regenerate", {sId: this.context.user.id, vals:this.state.selected}).then(json=>{
+        API.post("/student/plan/regenerate", {sId: this.context.user.id, vals:this.state.selected}).then(json=>{
             if(json.error){
                 alert("Could not remove classes, no suitable alternatives found.");
                 this.setState({

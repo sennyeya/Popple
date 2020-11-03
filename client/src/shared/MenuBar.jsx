@@ -1,8 +1,7 @@
 import React, {useContext} from 'react'
-import Header from './Header';
 import {Link} from 'react-router-dom'
 import UserContext from '../contexts/UserContext';
-import '../Navbar.module.css'
+import './MenuBar.module.css'
 import {withRouter} from 'react-router-dom'
 
 function MenuBar(props){
@@ -14,8 +13,7 @@ function MenuBar(props){
     }
     return (
         <>
-            <Header/>
-            <nav>
+            <nav style={props.style}>
                 <ul>
                     {
                         route==="student"?

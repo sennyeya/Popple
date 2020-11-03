@@ -1,8 +1,12 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
+import './MenuBar.module.css'
 export default function Main(){
     return (
-    <footer style={{maxHeight:"5vh", textAlign:"center", background:"gray", width:"100vw"}}>
-        <Link to="/tos">Terms of Service</Link>
-    </footer>)
+        <nav style={{maxHeight:"6vh", textAlign:"center", height:"6vh", position:"relative", minHeight:"50px"}}>
+            <footer style={{padding:"20px"}}>
+                <Link to="/tos">Terms of Service</Link>
+            </footer>
+        </nav>
+    )
 }

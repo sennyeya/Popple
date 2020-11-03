@@ -4,7 +4,17 @@ import style from './ContentContainer.module.css'
 export default function Container(props){
     return (
         <div className={style.container}>
-            {props.children}
+            <Content>
+                {props.children}
+            </Content>
+        </div>
+    )
+}
+
+function Content(props){
+    return (
+        <div className={style.content}>
+           {props.children} 
         </div>
     )
 }
