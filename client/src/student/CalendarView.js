@@ -1,7 +1,5 @@
 import React from 'react';
-import {config, authOptionsGet, authOptionsPost} from './config';
-import Loading from '../shared/Loading';
-import style from './LandingPage.module.css';
+import {LoadingIndicator} from '../shared/Loading';
 import mainStyle from '../Main.module.css'
 import { Calendar, momentLocalizer } from 'react-big-calendar'
 import moment from 'moment'
@@ -10,6 +8,7 @@ import {Tabs, TabList, Tab, TabPanel} from 'react-tabs'
 import AsyncSelect from '../shared/AsyncSelect';
 import Button from '@material-ui/core/Button';
 import Grid from '@material-ui/core/Grid';
+import API from '../shared/API'
 
 const localizer = momentLocalizer(moment);
 
@@ -18,19 +17,13 @@ class CalendarItem extends React.Component{
         super(props);
         this.state = {
             isLoading: true,
-            isError:false,
             calendars: []
         }
     }
 
     render(){
-        if(this.state.isError){
-            return(
-                    <p>Whooops, something went wrong!</p>
-            )
-        }
         return(<>
-            {this.state.isLoading?<Loading/>:(
+            {this.state.isLoading?<LoadingIndicator/>:(
                 <Calendar
                 localizer={localizer}
                 events={this.state.calendars}
@@ -54,19 +47,9 @@ class CalendarItem extends React.Component{
     }
 
     componentDidMount(){
-        fetch(config.api+"/calendar/get", authOptionsPost(
-            JSON.stringify({id:this.props.elem.id}))
-        ).then(e=>{
-            if(!e.ok){
-                this.props.verify();
-                throw new Error();
-            }
-            return e.json()
-        })
+        API.post("/calendar/get", {id:this.props.elem.id})
         .then(e=>{
             this.setState({isLoading:false, calendars: this.toCalendarList(e)})
-        }).catch((err)=>{
-            this.setState({isError:true})
         })
     }
 }
@@ -87,27 +70,17 @@ export default class CalendarGrid extends React.Component{
     }
 
     componentDidMount(){
-        fetch(config.api+"/calendar/getList", authOptionsGet).then(e=>{
-            if(!e.ok){
-                throw new Error(e.statusText);
-            }
-            return e.json();
-        }).then(json=>{
+        API.get("/calendar/getList").then(json=>{
             this.setState({calendars:json, loading:!(json&&this.state.selected)})
         })
-        fetch(config.api+"/calendar/getList", authOptionsGet).then(e=>{
-            if(!e.ok){
-                throw new Error(e.statusText);
-            }
-            return e.json();
-        }).then(json=>{
+        API.get("/calendar/getList").then(json=>{
             this.setState({selected:json.slice(1), loading:!(json.slice(1)&&this.state.calendars)})
         })
     }
 
     render(){
         if(this.state.loading){
-            return <div className={mainStyle.container}><Loading></Loading></div>
+            return <div className={mainStyle.container}><LoadingIndicator/></div>
         }
         if(!this.state.calendars.length){
             return(
@@ -135,7 +108,7 @@ export default class CalendarGrid extends React.Component{
                             with the expectation that this will allow you to add it to your Google calendar list as well.
                         </p>
                         <AsyncSelect url={()=>{
-                                return fetch(config.api+'/calendar/getLocalOptions', authOptionsGet)
+                                return API.get('/calendar/getLocalOptions')
                             }} 
                             label="Add a Calendar"
                             multi
@@ -154,7 +127,7 @@ export default class CalendarGrid extends React.Component{
                             calendar.
                         </p>
                         <AsyncSelect url={()=>{
-                                return fetch(config.api+'/calendar/getOptions', authOptionsGet)
+                                return API.get('/calendar/getOptions')
                             }} 
                             value={this.state.selected}
                             label="Add a Calendar"
@@ -175,24 +148,14 @@ export default class CalendarGrid extends React.Component{
 
     _onExternalCalendarClick(){
         this.setState({loading:true})
-        fetch(config.api+"/calendar/shareCalendar", authOptionsPost(JSON.stringify({id:this.state.selected.map(e=>e.value)}))).then(e=>{
-            if(!e.ok){
-                throw new Error();
-            }
-            return e.json()
-        }).then(json=>{
+        API.post("/calendar/shareCalendar", {id:this.state.selected.map(e=>e.value)}).then(()=>{
             this.setState({loading:false})
         })
     }
 
     _onInternalCalendarAdd(){
         this.setState({loading:true})
-        fetch(config.api+"/calendar/addCalendar", authOptionsPost(JSON.stringify({id:this.state.selected.map(e=>e.value)}))).then(e=>{
-            if(!e.ok){
-                throw new Error();
-            }
-            return e.json()
-        }).then(json=>{
+        API.post("/calendar/addCalendar", {id:this.state.selected.map(e=>e.value)}).then(()=>{
             this.setState({loading:false})
         })
     }

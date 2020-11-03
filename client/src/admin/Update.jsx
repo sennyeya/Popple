@@ -1,6 +1,6 @@
 import React from 'react';
-import {config} from '../student/config';
-import Loading from '../shared/Loading';
+import config from '../config';
+import {LoadingIndicator} from '../shared/Loading';
 
 class Update extends React.Component{
     
@@ -35,7 +35,7 @@ class Update extends React.Component{
                     <h1 className="headerText">Information</h1>
                 </div>
                 <div id="canvasContainer">
-                    {this.state.isLoading?<Loading/>:<div></div>}
+                    {this.state.isLoading?<LoadingIndicator/>:<div></div>}
                 </div>
             </div>
             </>

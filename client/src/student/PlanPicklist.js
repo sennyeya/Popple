@@ -1,8 +1,8 @@
 import React from 'react';
 import Select from 'react-select';
-import Loading from '../shared/Loading';
-import {config, authOptionsPost, authOptionsGet} from './config';
+import {LoadingIndicator} from '../shared/Loading';
 import Button from 'react-bootstrap/Button';
+import API from '../shared/API';
 
 class PlanPicklist extends React.Component{
     constructor(props){
@@ -20,7 +20,7 @@ class PlanPicklist extends React.Component{
     }
 
     componentDidMount(){
-        fetch(config.api+"/data/plans",authOptionsGet).then(data=>data.json()).then(json=>{
+        API.get("/data/plans").then(json=>{
             var plans = json.plans || [];
             this.setState({plans:plans, isLoading:false});
         });
@@ -29,7 +29,7 @@ class PlanPicklist extends React.Component{
     render(){
         return(
             <>
-                {this.state.isLoading?<Loading/>:(
+                {this.state.isLoading?<LoadingIndicator/>:(
                     <>
                         <Select onChange={this._onPickListSelect} options={this.state.plans} isMulti={true}/>
                         <Button variant="primary" onClick={this._onPlanAdd}/>
@@ -47,7 +47,7 @@ class PlanPicklist extends React.Component{
         if(!this.state.plans || !this.state.plans.length){
             return;
         }
-        fetch(config.api+"/users/addPlan", authOptionsPost(JSON.stringify(this.state.selectedOptions)))
+        API.post("/users/addPlan", this.state.selectedOptions)
     }
 }
 

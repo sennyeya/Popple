@@ -9,7 +9,9 @@ var studentSchema = new Schema({
     options:[{type:Schema.Types.ObjectId, ref:"plannodes"}],
     semesterPlan:[{type:Schema.Types.ObjectId, ref:'classes'}],
     desiredCredits:Number,
-    googleId: String
+    user: {type:Schema.Types.ObjectId, ref:"authusers"},
+    lastAnsweredPlanSurvey:Date,
+    lastAnsweredClassSurvey:Date
 })
 
 var autoPopulatePlan = function(next) {

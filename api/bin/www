@@ -94,7 +94,8 @@ function onListening() {
 
 /** 
  * Start websocket server.
- */ 
+
 const WebSocket = require('ws')
 const wss = new WebSocket.Server({port:5050})
 WebSocketController.start(wss);
+ */ 

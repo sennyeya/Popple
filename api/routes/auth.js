@@ -58,6 +58,7 @@ router.get("/google/redirect",async (req, res)=>{
   try{
     const {tokens} = await oauth2Client.getToken(req.query.code)
     oauth2Client.setCredentials(tokens);
+    req.session.user = req.user;
     if(req.user&&req.user.isAdmin){
       res.redirect(config.FRONTEND_URL+"/admin")
     }else{

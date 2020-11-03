@@ -1,0 +1,11 @@
+ 
+nav {
+  background: #323232;
+  text-align: center; /* to center the UL in the nav */
+  position:sticky;
+  max-height: 3vh;
+  height: 3vh;
+  min-height: 30px;
+  position:-webkit-sticky;
+  top:0;
+}

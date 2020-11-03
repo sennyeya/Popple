@@ -12,10 +12,10 @@ img{
 
 .profileModal{
     position: absolute;
-    top:5vh;
+    top:6vh;
     right:10px;
     background-color: white;
-    border: 1px solid grey;
+    border: 1 black;
     box-shadow: 0 2.8px 2.2px rgba(0, 0, 0, 0.034),
     0 6.7px 5.3px rgba(0, 0, 0, 0.048),
     0 12.5px 10px rgba(0, 0, 0, 0.06),
@@ -26,7 +26,7 @@ img{
     height:125px;
     display:table;
     z-index:100001;
-    border-radius: 10%;
+    border-radius: 5px;
     outline:none;
     overflow: auto;
 }
@@ -38,5 +38,9 @@ img{
 }
 
 .profileModalContainer button{
-    margin:5%
+    margin:2%;
+    background: rgba(189, 178, 178, 0.822);
+    border: none;
+    border-radius: 2px;
+    padding: 2%;
 }
