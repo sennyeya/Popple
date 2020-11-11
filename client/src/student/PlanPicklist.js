@@ -1,7 +1,6 @@
 import React from 'react';
 import Select from 'react-select';
 import {LoadingIndicator} from '../shared/Loading';
-import Button from 'react-bootstrap/Button';
 import API from '../shared/API';
 
 class PlanPicklist extends React.Component{
@@ -32,7 +31,7 @@ class PlanPicklist extends React.Component{
                 {this.state.isLoading?<LoadingIndicator/>:(
                     <>
                         <Select onChange={this._onPickListSelect} options={this.state.plans} isMulti={true}/>
-                        <Button variant="primary" onClick={this._onPlanAdd}/>
+                        <button onClick={this._onPlanAdd}/>
                     </>
                 )}
             </>

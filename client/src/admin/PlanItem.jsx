@@ -1,34 +1,32 @@
 import React, { useEffect } from 'react';
 import {LoadingIndicator} from '../shared/Loading'
-import Button from '@material-ui/core/Button';
-import ButtonGroup from '@material-ui/core/ButtonGroup';
 import AsyncSelect from '../shared/AsyncSelect'
-import { Dialog, TextField, DialogActions, DialogTitle, DialogContent, DialogContentText } from '@material-ui/core';
+import { Dialog, TextField, DialogActions, DialogTitle, DialogContent} from '@material-ui/core';
 import API from '../shared/API';
 
-function PlanItem(props){
+function PlanItem(){
     const [selected, setSelected] = React.useState(null);
     const [showAdd, setShowAdd] = React.useState(false);
     const [showEdit, setShowEdit] = React.useState(false);
     const [loading, setLoading] = React.useState(false);
     return (
-        <>
-        <p>Here you can edit an existing class or add a new one.</p>
-        <AsyncSelect url={()=>{
-            return API.get('/admin/planPicklist')
-        }} 
-        label="Plan"
-        loading={loading}
-        onClick={(e,val)=>{
-            setSelected(val)
-        }}/>
-        <ButtonGroup>
-            <Button variant="contained" disabled={!selected} onClick={()=>setShowEdit(true)}>Edit</Button>
-            <Button variant="outlined" onClick={()=>setShowAdd(true)}>Add A New Plan</Button>
-        </ButtonGroup>
-        <AddPlanModal open={showAdd} setOpen={setShowAdd} setMenuLoading={setLoading}/>
-        <EditPlanModal open={showEdit} setOpen={setShowEdit} item={selected} setMenuLoading={setLoading}/>
-        </>
+        <div style={{margin:"10px"}}>
+            <p>Edit an existing class or add a new one.</p>
+            <AsyncSelect 
+                url={()=>{
+                    return API.get('/admin/planPicklist')
+                }} 
+                label="Plans"
+                loading={loading}
+                onClick={(e,val)=>{
+                    setSelected(val)
+                }}
+            />
+            <button hidden={!selected?!selected:null} onClick={()=>setShowEdit(true)}>Edit</button>
+            <button onClick={()=>setShowAdd(true)}>Add A New Plan</button>
+            <AddPlanModal open={showAdd} setOpen={setShowAdd} setMenuLoading={setLoading}/>
+            <EditPlanModal open={showEdit} setOpen={setShowEdit} item={selected} setMenuLoading={setLoading}/>
+        </div>
     )
 }
 
@@ -43,12 +41,14 @@ function AddPlanModal(props){
     }
 
     const submitForm = () =>{
+        setLoading(true)
         API.post("/admin/savePlanItem", {
             name:name,
             requirements: selected
         }).then(()=>{
             setLoading(false);
             setMenuLoading(true);
+            setOpen(false)
         })
     }
 
@@ -57,9 +57,6 @@ function AddPlanModal(props){
         <Dialog open={open} onClose={handleClose}>
             <DialogTitle id="alert-dialog-title">{"Add Plan"}</DialogTitle>
             <DialogContent>
-            <DialogContentText id="alert-dialog-description">
-                This is used to add a plan.
-            </DialogContentText>
             {loading?<LoadingIndicator/>:
             <form>
                 <TextField label={"Name of Plan"} required onChange={(e)=>{
@@ -77,12 +74,12 @@ function AddPlanModal(props){
             </form>}
             </DialogContent>
             <DialogActions>
-            <Button onClick={handleClose} color="primary">
+            <button onClick={handleClose}>
                 Cancel
-            </Button>
-            <Button onClick={submitForm} color="primary" autoFocus>
+            </button>
+            <button onClick={submitForm} className="primary">
                 Save
-            </Button>
+            </button>
             </DialogActions>
         </Dialog>
     </>)
@@ -112,6 +109,7 @@ function EditPlanModal(props){
     }
 
     const submitForm = () =>{
+        setLoading(true)
         API.post("/admin/savePlanItem", {
             id: item.value,
             name:name,
@@ -119,19 +117,17 @@ function EditPlanModal(props){
         }).then(()=>{
             setLoading(false);
             setMenuLoading(true);
+            setOpen(false)
         })
     }
 
     return (
     <>
         <Dialog open={open} onClose={handleClose}>
-            <DialogTitle id="alert-dialog-title">{"Edit Class"}</DialogTitle>
+            <DialogTitle id="alert-dialog-title">{"Edit Plan"}</DialogTitle>
             <DialogContent>
-            <DialogContentText id="alert-dialog-description">
-                This allows you to edit a class.
-            </DialogContentText>
             <form>
-                <TextField label={"Name of Class"} required onChange={(e)=>{
+                <TextField label={"Name of Plan"} required onChange={(e)=>{
                     setName(e.target.value)
                 }} defaultValue={item?item.label:""}/>
                 <AsyncSelect url={()=>{
@@ -146,12 +142,12 @@ function EditPlanModal(props){
             </form>
             </DialogContent>
             <DialogActions>
-            <Button onClick={handleClose} color="primary">
-                Close
-            </Button>
-            <Button type="submit" onClick={submitForm} color="primary" autoFocus>
+            <button onClick={handleClose}>
+                Cancel
+            </button>
+            <button onClick={submitForm} className="primary">
                 Save
-            </Button>
+            </button>
             </DialogActions>
         </Dialog>
     </>)

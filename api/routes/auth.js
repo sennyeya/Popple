@@ -1,6 +1,7 @@
 var express = require('express');
 const {oauth2Client, authUrl} = require("../services/authSetup")
-const config = require("../config")
+const config = require("../config");
+const authController = require('../controllers/authController')
 
 var router = express.Router();
 
@@ -57,14 +58,16 @@ router.get("/google/redirect",async (req, res)=>{
   // Save these somewhere safe so they can be used at a later time.
   try{
     const {tokens} = await oauth2Client.getToken(req.query.code)
-    oauth2Client.setCredentials(tokens);
-    req.session.user = req.user;
-    if(req.user&&req.user.isAdmin){
+    //oauth2Client.setCredentials(tokens);
+    let user = await authController.upsertAuthUser(tokens);
+    req.session.user = user.id;
+    if(user&&user.isAdmin){
       res.redirect(config.FRONTEND_URL+"/admin")
     }else{
       res.redirect(config.FRONTEND_URL+"/student")
     }
   }catch(err){
+    console.log(err)
     res.redirect(config.BASE_URL+"/auth/login/failed")
   }
 });

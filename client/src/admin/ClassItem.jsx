@@ -1,32 +1,30 @@
 import React, { useEffect } from 'react';
 import {LoadingIndicator} from '../shared/Loading'
-import Button from '@material-ui/core/Button';
-import ButtonGroup from '@material-ui/core/ButtonGroup';
 import AsyncSelect from '../shared/AsyncSelect'
-import { Dialog, TextField, DialogActions, DialogTitle, DialogContent, DialogContentText, FormControl } from '@material-ui/core';
+import { Dialog, TextField, DialogActions, DialogTitle, DialogContent, FormControl } from '@material-ui/core';
 import API from '../shared/API';
 
-function ClassItem(props){
+function ClassItem(){
     const [selected, setSelected] = React.useState(null);
     const [showAdd, setShowAdd] = React.useState(false);
     const [showEdit, setShowEdit] = React.useState(false);
     return (
-        <>
-        <p>Here you can edit an existing class or add a new one.</p>
-        <AsyncSelect url={()=>{
-            return API.get('/admin/classPicklist')
-        }} 
-        label="Class to Add"
-        onClick={(e,val)=>{
-            setSelected(val)
-        }}/>
-        <ButtonGroup>
-            <Button variant="contained" disabled={!selected} onClick={()=>setShowEdit(true)}>Edit</Button>
-            <Button variant="outlined" onClick={()=>setShowAdd(true)}>Add A New Class</Button>
-        </ButtonGroup>
-        <AddClassModal open={showAdd} setOpen={setShowAdd}/>
-        <EditClassModal open={showEdit} setOpen={setShowEdit} item={selected}/>
-        </>
+        <div style={{margin:"10px"}}>
+            <p>Edit an existing class or add a new one.</p>
+            <AsyncSelect 
+                url={()=>{
+                    return API.get('/admin/classPicklist')
+                }} 
+                label="Classes"
+                onClick={(e,val)=>{
+                    setSelected(val)
+                }}
+            />
+            <button hidden={!selected?!selected:null} onClick={()=>setShowEdit(true)}>Edit</button>
+            <button onClick={()=>setShowAdd(true)}>Add A New Class</button>
+            <AddClassModal open={showAdd} setOpen={setShowAdd}/>
+            <EditClassModal open={showEdit} setOpen={setShowEdit} item={selected}/>
+        </div>
     )
 }
 
@@ -41,15 +39,15 @@ function AddClassModal(props){
         setOpen(false)
     }
 
-    const submitForm = () =>{
-        (async ()=>{
-            await API.post("/admin/saveClassItem", {
-                name:name, 
-                credits:credits, 
-                requirements: selected
-            })
-            setLoading(false);
-        })();
+    const submitForm = async () =>{
+        setLoading(true)
+        await API.post("/admin/saveClassItem", {
+            name:name, 
+            credits:credits, 
+            requirements: selected
+        })
+        setOpen(false);
+        setLoading(false);
     }
 
     return (
@@ -57,9 +55,6 @@ function AddClassModal(props){
         <Dialog open={open} onClose={handleClose}>
             <DialogTitle id="alert-dialog-title">{"Add Class"}</DialogTitle>
             <DialogContent>
-            <DialogContentText id="alert-dialog-description">
-                This is used to add a class.
-            </DialogContentText>
             {loading?<LoadingIndicator/>:
             <form>
                 <TextField label={"Name of Class"} required onChange={(e)=>{
@@ -82,12 +77,12 @@ function AddClassModal(props){
             </form>}
             </DialogContent>
             <DialogActions>
-            <Button onClick={handleClose} color="primary">
+            <button onClick={handleClose}>
                 Cancel
-            </Button>
-            <Button onClick={submitForm} color="primary" autoFocus>
+            </button>
+            <button onClick={submitForm} className="primary">
                 Save
-            </Button>
+            </button>
             </DialogActions>
         </Dialog>
     </>)
@@ -123,6 +118,7 @@ function EditClassModal(props){
     }
 
     const submitForm = () =>{
+        setLoading(true)
         API.post("/admin/saveClassItem", {
             id: item.value,
             name:name, 
@@ -130,6 +126,7 @@ function EditClassModal(props){
             requirements: selected
         }).then(()=>{
             setLoading(false);
+            setOpen(false)
         })
     }
 
@@ -138,9 +135,6 @@ function EditClassModal(props){
         <Dialog open={open} onClose={handleClose}>
             <DialogTitle id="alert-dialog-title">{"Edit Class"}</DialogTitle>
             <DialogContent>
-                <DialogContentText id="alert-dialog-description">
-                    This allows you to edit a class.
-                </DialogContentText>
                 <form>
                     <TextField label={"Name of Class"} required onChange={(e)=>{
                         setName(e.target.value)
@@ -149,7 +143,7 @@ function EditClassModal(props){
                                     return API.get('/admin/classPicklist')
                                 }} 
                                 multi
-                                label="Required Classes"
+                                label="Requirements"
                                 filter={(val)=>{
                                     return val.value!==item.value
                                 }}
@@ -165,12 +159,12 @@ function EditClassModal(props){
                 </form>
             </DialogContent>
             <DialogActions>
-                <Button onClick={handleClose} color="primary">
-                    Close
-                </Button>
-                <Button type="submit" onClick={submitForm} color="primary" autoFocus>
+                <button onClick={handleClose}>
+                    Cancel
+                </button>
+                <button onClick={submitForm} className="primary">
                     Save
-                </Button>
+                </button>
             </DialogActions>
         </Dialog>
     </>)

@@ -11,7 +11,7 @@ export default function LoginPage(){
     };
 
     return (
-        <div className={style.containerLogin}>
+        <div className={style.loginContainer}>
             <GoogleButton onClick={_handleSignInClick} style={{justifyContent:"center"}}/>
         </div>
     )

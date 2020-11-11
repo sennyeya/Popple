@@ -1,24 +1,31 @@
 .header{
-    display:block;
-    position: relative;
-    height: 7vh;
+    display:flex;
+    position: absolute;
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: center;
     align-content: center;
     align-items: center;
-    min-height: 50px;
+    max-height: 5rem;
+    min-height: 5rem;
+    top:0;
+    width:100%;
+    background: white;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
 }
 
 .banner{
+    width:100%;
     display:flex;
-    max-height:4vh;
-    height: 4vh;
     flex-direction: row;
     flex-wrap: nowrap;
     justify-content: center;
     align-content: center;
     align-items: center;
     flex: 1;
-    min-height: 20px;
+}
+
+.logo{
+    font-family: 'Rufina', serif;
+    cursor: pointer;
 }

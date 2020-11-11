@@ -1,12 +1,12 @@
 import React from 'react'
 import { Link } from 'react-router-dom'
-import './MenuBar.module.css'
-export default function Main(){
+import style from './Footer.module.css'
+export default function Footer(){
     return (
-        <nav style={{maxHeight:"6vh", textAlign:"center", height:"6vh", position:"relative", minHeight:"50px"}}>
-            <footer style={{padding:"20px"}}>
+        <div className={style.footerContainer}>
+            <footer style={{padding:"10px 20px"}}>
                 <Link to="/tos">Terms of Service</Link>
             </footer>
-        </nav>
+        </div>
     )
 }
