@@ -6,3 +6,7 @@ div[role=button]{
     text-align: center;
     margin: 0 auto;
 }
+
+.loginContainer{
+    margin:10vh 10px;
+}

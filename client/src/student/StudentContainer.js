@@ -1,16 +1,7 @@
 import React, {useEffect} from 'react';
-import {
-    BrowserRouter as Router,
-    Switch,
-    Route
-  } from "react-router-dom";
 import API from '../shared/API';
 import { Helmet } from 'react-helmet'
 import StudentDashboard from './Index'
-import CalendarGrid from './CalendarView';
-import Plan from './Plan';
-import GraphItem from './Graph';
-import Button from '@material-ui/core/Button';
 import { 
     Dialog,
     DialogActions, 
@@ -94,18 +85,7 @@ export default function StudentContainer(){
         <Helmet>
             <title>Student | Popple</title>
         </Helmet>
-        <Route path="/student" exact>
-            <StudentDashboard API={StudentAPI}/>
-        </Route>
-        <Route path="/student/calendar" exact>
-            <CalendarGrid API={StudentAPI}/>
-        </Route>
-        <Route path="/student/classes" exact>
-            <Plan API={StudentAPI}/>
-        </Route>
-        <Route path="/student/plan" exact>
-            <GraphItem API={StudentAPI}/>
-        </Route>
+        <StudentDashboard API={StudentAPI}/>
         {
             isClassSurveyDone?<></>:<ClassSurvey setSurveyComplete={setClassSurveyDone}/>
         }
@@ -161,9 +141,9 @@ function ClassSurvey({setSurveyComplete}){
             }
             </DialogContent>
             <DialogActions>
-            <Button type="submit" onClick={submitForm} color="primary" autoFocus>
+            <button onClick={submitForm} className="primary">
                 Save
-            </Button>
+            </button>
             </DialogActions>
         </Dialog>
     </>)
@@ -215,9 +195,9 @@ function PlanSurvey({setSurveyComplete}){
             }
             </DialogContent>
             <DialogActions>
-            <Button type="submit" onClick={submitForm} color="primary" autoFocus>
+            <button onClick={submitForm} className="primary">
                 Save
-            </Button>
+            </button>
             </DialogActions>
         </Dialog>
     </>)

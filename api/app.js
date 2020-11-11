@@ -21,15 +21,18 @@ var studentRouter = require('./routes/student')
 var app = express();
 db.connect();
 
-app.use(cookieSession({  name: 'session',  keys: ["asdf"],  maxAge: 24 * 60 * 60 * 1000}));
+app.use(cookieSession({
+  name: 'session',  
+  keys: ["asdf"],  
+  maxAge: 24 * 60 * 60 * 1000
+}));
 
 app.use(middleware.session());
-app.use(middleware.initialize());
+//app.use(middleware.initialize());
 
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-app.use(cookieParser());
 //app.use(express.static(path.join(__dirname, 'public')));
 app.use(cors({credentials: true, origin: config.FRONTEND_URL}));
 

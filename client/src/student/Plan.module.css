@@ -25,27 +25,20 @@ li{
     align-content: space-between;
     display: flex;
     flex-direction: row;
+    border: 1px solid lightgray;
 }
 
 li.unselected{
-    background:#bbb;
+    background:#e4e4e4;
 }
 
 li.selected{
-    background:#bbb;
+    background:#e4e4e4;
 }
 
 li span{
     display:inline-block;
     padding:1%;
-}
-
-.planButton{
-    background:#ccc;
-    padding:4px 15px;
-    border:1 #0101;
-    border-radius: 5px;
-    flex:1;
 }
 
 .planSelect{
@@ -68,7 +61,8 @@ ul.collapsable{
 ul.collapsable li{
     margin: .5%;
     margin-left: 2%;
-    background:#aaa;
+    background:#ffffff;
     padding: 1%;
     display:block;
+    animation:none;
 }

@@ -896,7 +896,7 @@ const generateBuckets = async (buckets, studentId)=>{
  * @returns {Array<Document>} array of bucket items, essentially plan nodes with a bucket property.
  */
 module.exports.retrieveBucketItems = async (id) =>{
-    let buckets = await Bucket.find({studentId:id}).sort({name:1}).exec();
+    let buckets = await Bucket.find({studentId:id}).populate({path:'nodes', populate:{path:'class', model:'planNode'}}).sort({name:1}).exec();
     // By default, create a single new bucket.
     if(buckets.length==0){
         let arr = [];
@@ -939,7 +939,11 @@ module.exports.retrieveBucketItems = async (id) =>{
         }
     }
 
-    return data;
+    return data.sort(function order(key1, key2) { 
+        if (key1.class.name < key2.class.name) return -1; 
+        else if (key1.class.name > key2.class.name) return +1; 
+        else return 0; 
+    });;
 }
 
 /**
@@ -962,7 +966,7 @@ module.exports.updateBucket = async (id, bucket, item) =>{
         if(elem.nodes.some(e=>e.id===item)){
             elem.nodes = elem.nodes.filter(e=>e.id!==item)
             try{
-                await elem.save();
+                await elem.update();
             }catch(e){
                 console.log(e)
             }
@@ -972,7 +976,7 @@ module.exports.updateBucket = async (id, bucket, item) =>{
     let b = await Bucket.findById(bucket).exec();
     b.nodes.push(item);
     try{
-        await b.save();
+        await b.update();
     }catch(e){
         console.log(e)
     }

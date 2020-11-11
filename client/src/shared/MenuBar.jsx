@@ -13,7 +13,7 @@ function MenuBar(props){
     }
     return (
         <>
-            <nav style={props.style}>
+            <nav style={{...props.style, flex:"1"}}>
                 <ul>
                     {
                         route==="student"?

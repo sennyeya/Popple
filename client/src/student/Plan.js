@@ -42,12 +42,11 @@ class Plan extends React.Component{
                     (
                         <div className={style.planSelect}>
                             <h2>This is your plan for the current semester. Please look through the given options and remove classes if they are not a good fit for you.</h2>
-                                <p>Replacing {removedCount} {removedCount===1?"class":"classes"}.</p>
                             <ul className={style.classes}>{this.state.options.map((e, index)=> {
                                 return <PlanItem data={e} keyVal={index} key={index} handleSelect = {this.onSelect} className={this.state.selected.some(l=>l===e._id)?"selected":"unselected"}/>})
                                 }
                             </ul>
-                            <input type="button" onClick={this.onClassReload} id="regenerate" value="Regenerate My Plan" className={style.planButton}></input>
+                            <button onClick={this.onClassReload} id="regenerate" className="primary">Replace {removedCount} {removedCount===1?"Class":"Classes"}</button>
                         </div>
                     ):
                     (

@@ -1,0 +1,15 @@
+.loginButton{
+    margin:5px;
+    padding:10px 15px;
+    border-radius: 3px;
+    cursor: pointer;
+    border:1px solid lightgray;
+    color: white;
+    background-color:  #003366;
+    text-decoration: none;
+}
+
+.loginButton:hover {
+    background:#e4e4e4;
+    color: black;
+  }
