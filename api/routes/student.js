@@ -6,6 +6,9 @@ const classController = require('../controllers/classController');
 
 var router = express.Router();
 
+/**
+ * Populate the student object or make one if they don't have one.
+ */
 router.use(async (req, res, next) => {
     if(!req.user){
         return res.status(401).json({})
@@ -30,6 +33,9 @@ router.use(async (req, res, next) => {
     next();
 });
 
+/**
+ * Populate student's plan survey selections.
+ */
 router.post('/plan/survey', async (req, res)=>{
     try{
         await PlanController.updateSurvey(req.student, req.body.plans)
@@ -39,10 +45,16 @@ router.post('/plan/survey', async (req, res)=>{
     }
 })
 
-router.get('/plan/classes', async (req, res)=>{
+/**
+ * Get the classes required for this student's plan.
+ */
+router.get('/requiredClasses', async (req, res)=>{
     return res.json(await PlanController.getPlanClasses(req.student))
 })
 
+/**
+ * Populate student's class survey selections.
+ */
 router.post('/class/survey', async (req, res)=>{
     try{
         await PlanController.updateItemSurvey(req.student, req.body.classes)
@@ -67,6 +79,9 @@ const outsideCurrentSemester = (lastSurveyDate) =>{
     return true;
 }
 
+/**
+ * Ensure the student has answered the plan and class surveys.
+ */
 router.use(async (req, res, next)=>{
     if(!req.student.lastAnsweredPlanSurvey){
         return res.json({error:"NO_VALID_PLAN_SURVEY",message:"This student has not answered a plan survey yet."})
@@ -76,6 +91,9 @@ router.use(async (req, res, next)=>{
     next();
 })
 
+/**
+ * Allow the student to add plans to their user.
+ */
 router.post('/plan/add', async (req, res)=>{
     try{
         await PlanController.addPlans(req.student, [req.body.id])
@@ -91,30 +109,6 @@ router.post('/plan/add', async (req, res)=>{
 router.post('/plan/tree', async (req, res)=>{
     const plan = await PlanController.retrievePlanGraph(req.student);
     res.json({tree:plan});
-})
-
-/**
- * Generate a plan for the student.
- */
-router.post('/plan/generate', async function(req, res){
-    try{
-        const plan = await PlanController.generateSemester(req.student);
-        res.json({plan:plan});
-    }catch(err){
-        res.json({error:err.message});
-    }
-})
-
-/*
-This method regenerates the tree for the student, taking into account the classes they didn't want to take.
-*/
-router.post('/plan/regenerate', async function(req, res){
-    const plan = await PlanController.regenerateTree(req.student, req.body.vals);
-    if(plan.error){
-        res.json({error:plan.error})
-    }else{
-        res.json({plan:plan})
-    }
 })
 
 /**

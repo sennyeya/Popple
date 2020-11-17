@@ -2,6 +2,9 @@ var mongoose = require('mongoose');
 
 var Schema = mongoose.Schema;
 
+/**
+ * TODO: Rename this to requisite. This should be defined at the plan level, plans may have different requirements for each class.
+ */
 requirementSchema = new Schema({
     classFrom: {type:Schema.Types.ObjectId, ref:'classes'},
     classTo: {type:Schema.Types.ObjectId, ref:"classes"},

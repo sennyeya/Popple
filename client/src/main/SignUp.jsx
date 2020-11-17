@@ -2,7 +2,8 @@ import React from 'react';
 import {Form, InputGroup, Col} from 'react-bootstrap';
 import {Formik} from 'formik';
 import {object, string, ref} from 'yup'
-import API from './shared/API';
+import API from '../shared/API';
+import { useUserOutlet } from '../contexts/UserContext';
 
 const schema = object({
     firstName: string().required('First name is required').min(3, 'First name must be at least ${min} characters.'),
@@ -13,10 +14,15 @@ const schema = object({
   });
 
 export default function SignUp(){
+    const setUser = useUserOutlet();
+
     const [error, setError] = React.useState("");
     const handleSubmit=(values)=>{
         delete values['confirmPassword']
-        API.post('/auth/signUp', values).then(()=>window.location="/").catch(async e=>{
+        API.post('/auth/signUp', values).then((user)=>{
+            setUser(user)
+            window.location="/"
+        }).catch(async e=>{
             setError(e.message)
         })
     }

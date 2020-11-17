@@ -1,5 +1,5 @@
 import React, {useContext} from 'react';
-import UserContext from './contexts/UserContext';
+import UserContext from '../contexts/UserContext';
 import style from './HomePage.module.css'
 
 export default function HomePage(props){

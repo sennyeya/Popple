@@ -2,8 +2,8 @@ import React from 'react';
 import {Form, InputGroup} from 'react-bootstrap';
 import {Formik} from 'formik';
 import {object, string} from 'yup'
-import API from './shared/API';
-import { useUserOutlet } from './contexts/UserContext';
+import API from '../shared/API';
+import { useUserOutlet } from '../contexts/UserContext';
 
 const schema = object({
     username: string().required('Username is required').min(3, 'Username must be at least ${min} characters.'),
@@ -11,14 +11,14 @@ const schema = object({
   });
 
 export default function LoginForm(){
-    const {setUser} = useUserOutlet();
+    const setUser = useUserOutlet();
 
     const [error, setError] = React.useState("");
     const handleSubmit=(values)=>{
         API.post('/auth/login', values).then((user)=>{
             setUser(user)
             window.location="/"
-        }).catch(async e=>{
+        }).catch(async (e)=>{
             setError(e.message)
         })
     }

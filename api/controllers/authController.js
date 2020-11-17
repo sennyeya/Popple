@@ -4,6 +4,9 @@ const {User} = require("../schema/authModel");
 const {oauth2Client} = require('../services/authSetup')
 
 module.exports = {
+    /**
+     * Inserts the google OAuth flow based user, using the passed in JSON webtoken.
+     */
     upsertAuthUser:async (tokens)=>{
         let ticket = await oauth2Client.verifyIdToken({
             idToken:tokens.id_token, 
@@ -22,6 +25,9 @@ module.exports = {
         return (await user.save())
     },
 
+    /**
+     * Creates a user based on the local, username/password, flow.
+     */
     createAuthUser: async ({firstName, lastName, username, password}) =>{
         let user = await User.findOne({username}).exec();
         if(!user){
@@ -37,6 +43,9 @@ module.exports = {
         }
     },
 
+    /**
+     * Assert that a user based on the local, username/password, flow exists for the passed in username.
+     */
     logInUser: async ({username, password}) =>{
         let user = await User.findOne({username}).exec();
         if(!user){
