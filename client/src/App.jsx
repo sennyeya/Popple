@@ -7,19 +7,19 @@ import {
   Route,
   Redirect
 } from "react-router-dom";
-import TOS from './TOS';
+import TOS from './main/TOS';
 import AdminDashboard from './admin/Index';
 import {api} from './config'
 import API from './shared/API'
-import HomePage from './HomePage'
-import LoginPage from './LoginPage'
+import HomePage from './main/HomePage'
+import LoginPage from './main/LoginPage'
 import UserContext,{ useUserOutlet } from './contexts/UserContext';
 import { LoadingIndicator } from './shared/Loading';
 import ContentContainer from './shared/ContentContainer'
-import ErrorBoundary from './ErrorBoundary'
+import ErrorBoundary from './main/ErrorBoundary'
 import { Helmet } from 'react-helmet'
 import StudentContainer from './student/StudentContainer';
-import SignUp from './SignUp';
+import SignUp from './main/SignUp';
 
 export default function App(){
 
@@ -32,14 +32,19 @@ export default function App(){
 	let setUser = useUserOutlet();
 
     React.useEffect(()=>{
-		API.get("/users/current").then(json=>{
-			setUser(json);
-			setLoading(false)
-		}).catch(()=>{
-			setUser(null)
-			setLoading(false)
-		})
-	}, [setUser])
+		if(!user){
+			API.get("/users/current").then(json=>{
+				if(!user){
+					setUser(json);
+					setLoading(false)
+				}
+			}).catch(()=>{
+				setUser(null)
+				setLoading(false)
+			})
+		}
+		
+	}, [setUser, user])
 
     return (
 		<ErrorBoundary>
@@ -56,7 +61,11 @@ export default function App(){
 								<HomePage/>
 							</Route>
 							<Route path="/signUp" exact>
+							{
+								user?
+								<Redirect to="/"/>:
 								<SignUp/>
+							}
 							</Route>
 							<Route path="/tos" exact>
 								<TOS/>
@@ -78,7 +87,10 @@ export default function App(){
 									<Route path="/admin">
 										<AdminDashboard/>
 									</Route>
-									<Route path="/logout" exact render={()=>window.open(api+"/auth/logout", " self")}/>
+									<Route path="/logout" exact render={()=>{
+										setUser(null);
+										window.open(api+"/auth/logout", " self")
+									}}/>
 								</>
 							}
 						</Switch>

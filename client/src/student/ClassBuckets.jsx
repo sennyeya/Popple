@@ -3,7 +3,7 @@ import {Droppable, Draggable, DragDropContext} from 'react-beautiful-dnd'
 import {LoadingIndicator} from '../shared/Loading';
 import {InfoModal} from './ClassModal';
 import {Collapse} from 'react-collapse';
-import {BiCaretDown, BiCaretRight} from 'react-icons/bi';
+import {BiCaretDown, BiCaretRight, BiError} from 'react-icons/bi';
 import style from './ClassBuckets.module.css'
 
 const PRIMARY_BUCKET = "";
@@ -82,10 +82,6 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
             if(depIds.some(e=>e===curr.id.trim())){
                 continue;
             }
-            console.log(arr.length)
-            console.log(curr)
-            console.log(curr.children)
-            console.log(depIds)
             if(curr.children.some(e=>depIds.indexOf(e.trim())>-1)){
                 retVal.push(curr)
                 depIds.push(curr.id);
@@ -166,7 +162,6 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
 
     return (
         <>
-            {modalMessage?<h3 style={{color:"red"}}>{modalMessage}</h3>:<></>}
             <DragDropContext 
                 onDragEnd={onDragEnd}
             >
@@ -182,6 +177,11 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
                             padding:"5px"
                         }}>
                             <h3 style={{width:"100%", paddingLeft:"10px"}}>Required Courses</h3>
+                            {console.log(nodes.filter(node=>node.bucket===buckets[0].id).map(e=>{
+                                            return {
+                                                ...e, 
+                                                children:e.children.forEach(c=>nodes.filter(f=>f.id===c)[0]?console.log(nodes.filter(f=>f.id===c)[0]):console.log(c))
+                                            }}))}
                             <BucketItem bucket={buckets[0]} 
                                         items={nodes.filter(node=>node.bucket===buckets[0].id).map(e=>{
                                             return {
@@ -257,6 +257,7 @@ function BucketItem({bucket,items, isDropDisabled, missing, onClassClick, popula
                     style={getStyle(snapshot.isDraggingOver && !isDropDisabled)}
                     {...provided.droppableProps}
                 >
+                    {console.log(items)}
                     <h5 style={{'marginBlockStart':'.3em', 'marginInlineStart':'.3em', marginBlockEnd:".3em", marginInlineEnd:".3em"}}>{
                         isCollapseOpen?
                         <BiCaretDown onClick={(e)=>setCollapseOpen(!isCollapseOpen)} style={{margin:"auto 0", padding:"0px 1%"}}/>:
@@ -280,13 +281,12 @@ function BucketItem({bucket,items, isDropDisabled, missing, onClassClick, popula
 
 const ClassList = React.memo(function ClassList({items, missing, onClassClick, populatedBuckets}){
     return items.map((item,index)=>
-        <ClassItem item={item} index={index} key={item.id} missing={missing} onClassClick={onClassClick} populatedBuckets={populatedBuckets}/>
+        <ClassItem item={item} index={index} key={item.id} isMissing={missing.some(e=>e.id===item.id)} onClassClick={onClassClick} populatedBuckets={populatedBuckets}/>
     )
 })
 
-function ClassItem({item, index, missing, onClassClick, populatedBuckets}){
-    missing = missing.some(e=>e.id===item.id)
-    const getStyle= (isDragging, draggableStyle, isMissing, isValid) => ({
+function ClassItem({item, index, isMissing, onClassClick, populatedBuckets}){
+    const getStyle= (isDragging, draggableStyle, missing, isValid) => ({
         // some basic styles to make the items look a bit nicer
         userSelect: 'none',
         margin: `0 0 ${grid}px 0`,
@@ -295,13 +295,14 @@ function ClassItem({item, index, missing, onClassClick, populatedBuckets}){
         textAlign:"left",
         padding:"10px",
         // change background colour if dragging
-        border: `1px solid ${isDragging ? '#82d6e0' : (isMissing?'darkred':(isValid?'green':'#bbb'))}`,
-        color:isMissing?'darkred':(isValid?'green':'black'),
+        border: `1px solid ${isDragging ? '#82d6e0' : (missing?'darkred':(isValid?'green':'#bbb'))}`,
+        color:missing?'darkred':(isValid?'green':'black'),
         // styles we need to apply on draggables
         ...draggableStyle
     });
+
     return (
-        <Draggable key={item.id} draggableId={item.id} index={index}>
+        <Draggable key={item.id} draggableId={item.id} index={index} isDragDisabled={isMissing}>
             {(provided, snapshot) => (
                 <div
                     ref={provided.innerRef}
@@ -310,14 +311,15 @@ function ClassItem({item, index, missing, onClassClick, populatedBuckets}){
                     style={getStyle(
                         snapshot.isDragging,
                         provided.draggableProps.style,
-                        missing,
-                        populatedBuckets?item.children.every(e=>populatedBuckets.some(f=>f.id===e.id)):false
+                        isMissing,
+                        populatedBuckets?item.children.every(e=>e&&populatedBuckets.some(f=>f&&f.id===e.id)):false
                     )}
                     onClick={()=>onClassClick(item.id)}
                 >
                     <span>
                         {item.label}
                     </span>
+                    {isMissing?<BiError style={{float:"right"}}/>:<></>}
                     <br/>
                     {item.children.length?<span>Requires {item.children.map(e=>e.label).join(",")}</span>:""}
                 </div>

@@ -1,5 +1,5 @@
 import React from 'react'
-import MessageContext from './contexts/MessagingContext';
+import MessageContext from '../contexts/MessagingContext';
 
 export default class ErrorBoundary extends React.Component{
     constructor(props) {

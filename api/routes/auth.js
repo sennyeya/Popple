@@ -8,9 +8,9 @@ var router = express.Router();
 // when login is successful, retrieve user info
 router.get("/login/success", (req, res) => {
 	if (req.user) {
-		res.redirect(config.FRONTEND_URL)
+		res.redirect(config.FRONTEND_URLS[req.get('host')])
 	}else{
-		res.redirect(config.BASE_URL+"/auth/login/failed")
+		res.redirect("/auth/login/failed")
 	}
 });
 
@@ -18,7 +18,6 @@ router.get("/login/success", (req, res) => {
 router.get("/login/failed", (req, res) => {
 	req.user = null;
 	res.status(401).json({
-		success: false,
 		message: "user failed to authenticate."
 	});
 });
@@ -28,7 +27,7 @@ router.get("/logout", (req, res) => {
 	req.user = null;
 	req.session = null;
 	oauth2Client.credentials = null
-	res.redirect(config.FRONTEND_URL);
+	res.redirect(config.FRONTEND_URLS[req.get('host')]);
 });
 
 // auth with google
@@ -46,27 +45,33 @@ router.get("/google/redirect",async (req, res)=>{
 		let user = await authController.upsertAuthUser(tokens);
 		req.session.user = user.id;
 		if(user&&user.isAdmin){
-		res.redirect(config.FRONTEND_URL+"/admin")
+			res.redirect(config.FRONTEND_URLS[req.get('host')]+"/admin")
 		}else{
-		res.redirect(config.FRONTEND_URL+"/student")
+			res.redirect(config.FRONTEND_URLS[req.get('host')]+"/student")
 		}
 	}catch(err){
 		console.log(err)
-		res.redirect(config.BASE_URL+"/auth/login/failed")
+		res.redirect("/auth/login/failed")
 	}
 });
 
+/**
+ * Username/password signup.
+ */
 router.post('/signUp', async (req, res)=>{
 	//validate
 	try{
 		let user = await authController.createAuthUser(req.body);
 		req.session.user = user.id;
-		res.sendStatus(200)
+		res.json(user)
 	}catch(e){
-		res.status(400).json({message})
+		res.status(400).json({message:e.message})
 	}
 })
 
+/**
+ * Username/password login.
+ */
 router.post('/login', async (req, res)=>{
 	try{
 		let user = await authController.logInUser(req.body)

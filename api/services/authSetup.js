@@ -36,33 +36,3 @@ function session(){
 }
 
 module.exports = {oauth2Client, authUrl:url, session}
-
-// function refreshToken(user){
-//     if(!user){
-//         return null;
-//     }
-//     return new Promise((resolve, reject)=>{
-//         oauth2Client.refreshToken(user.refresh_token || user.refreshToken)
-//         .then((token)=>{
-//             oauth2Client.verifyIdToken({
-//                 idToken:token.tokens.id_token, 
-//                 audience: config.GOOGLE_CLIENT_ID
-//             }).then((ticket)=>{
-//                 const attrs = ticket.getPayload();
-//                 User.findOneAndUpdate({
-//                         googleId: attrs.sub
-//                     }, 
-//                     {
-//                         access_token: token.tokens.access_token, 
-//                         id_token: token.tokens.id_token
-//                     }).then((res)=>{
-//                         oauth2Client.setCredentials({id_token: attrs.id_token, access_token: attrs.access_token, refresh_token: attrs.refresh_token})
-//                         resolve(res);
-//                     })
-//                 })
-//         }).catch((err)=>{
-//             resolve(null);
-//         })
-//     })
-    
-// }

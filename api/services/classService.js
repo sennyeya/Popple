@@ -8,7 +8,5 @@ module.exports = {
             return false;
         }
         return student.completedClasses.includes(node.class.id);
-    }
-
-    
+    }    
 }

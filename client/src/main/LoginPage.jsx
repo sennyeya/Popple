@@ -1,5 +1,5 @@
 import React from 'react';
-import {api} from './config';
+import {api} from '../config';
 import GoogleButton from 'react-google-button';
 import LoginForm from './LoginForm'
 import style from './Main.module.css';

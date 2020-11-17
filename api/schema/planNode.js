@@ -2,6 +2,9 @@ var mongoose = require('mongoose');
 
 var Schema = mongoose.Schema;
 
+/**
+ * Plan node. DEPRECATED.
+ */
 var planNodeSchema = new Schema({
     class:{type:Schema.Types.ObjectId, ref:'classes'},
     children:[{type:Schema.Types.ObjectId, ref:'plannodes'}]

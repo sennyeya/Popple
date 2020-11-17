@@ -4,13 +4,6 @@ const {PlanNode} = require("../schema/planNode");
 const {ObjectId} = require('mongoose/lib/types')
 
 module.exports = {
-    isCompleted : function(node, student){
-        if(!student.completedClasses){
-            return false;
-        }
-        return student.completedClasses.includes(node.class.id);
-    },
-
     addClass: async function(className, classRequirements, credits, equalClasses){
         var reqs = []
         var doc = await Class.create({name:className, credit:credits, requirements:[], relevantAlternatives:equalClasses});

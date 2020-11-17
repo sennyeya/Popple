@@ -1,11 +1,8 @@
 var express = require('express');
-const PlanController = require("../controllers/planController")
-
-const {User} = require('../schema/authModel')
 
 var router = express.Router();
 
-/* GET users listing. */
+/* GET the current logged in user. */
 router.get('/current', async function(req, res) {
 	res.send({
 		name:req.user.displayName,

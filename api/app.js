@@ -1,7 +1,5 @@
 var createError = require('http-errors');
 var express = require('express');
-var path = require('path');
-var cookieParser = require('cookie-parser');
 var logger = require('morgan');
 var cors = require('cors');
 const cookieSession = require('cookie-session');
@@ -15,35 +13,51 @@ var usersRouter = require('./routes/users');
 var dataRouter = require('./routes/data');
 var adminRouter = require('./routes/admin');
 var authRouter = require('./routes/auth');
-var calendarRouter = require("./routes/calendar");
 var studentRouter = require('./routes/student')
 
 var app = express();
 db.connect();
 
+app.enable('trust proxy');
+
+let cookieSettings = {}
+if(process.env.NODE_ENV!=="development"){
+  cookieSettings = {sameSite:'none', secure:true}
+}
+
 app.use(cookieSession({
   name: 'session',  
   keys: ["asdf"],  
-  maxAge: 24 * 60 * 60 * 1000
+  maxAge: 24 * 60 * 60 * 1000,
+  ...cookieSettings
 }));
 
 app.use(middleware.session());
-//app.use(middleware.initialize());
-
 app.use(logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
-//app.use(express.static(path.join(__dirname, 'public')));
-app.use(cors({credentials: true, origin: config.FRONTEND_URL}));
+app.use(cors({credentials: true, origin: Object.values(config.FRONTEND_URLS)}));
+
+/** Redirect to https. */
+app.use (function (req, res, next) {
+	if (req.secure) {
+		// request was via https, so do no special handling
+		next();
+	} else {
+		// request was via http, so redirect to https
+		res.redirect('https://' + req.headers.host + req.url);
+	}
+});
 
 // Routes
+app.use('/auth', authRouter)
+
+// User authenticated routes.
 app.use('/users', ensureAuthenticated, usersRouter);
 app.use('/data', ensureAuthenticated, dataRouter);
-app.use('/auth', authRouter)
-app.use('/calendar', ensureAuthenticated, calendarRouter)
 app.use('/student', ensureAuthenticated, studentRouter)
 
-// Authenticate requests to admin hook.
+// Admin authenticated route.
 app.use('/admin', ensureAdmin, adminRouter)
 
 app.use(function(req, res, next){
@@ -51,7 +65,7 @@ app.use(function(req, res, next){
 })
 
 // error handler
-app.use(function(err, req, res, next) {
+app.use(function(err, req, res) {
   // set locals, only providing error in development
   res.locals.message = err.message;
   res.locals.error = req.app.get('env') === 'development' ? err : {};
@@ -64,31 +78,19 @@ app.use(function(err, req, res, next) {
 });
 
 // Simple route middleware to ensure user is authenticated.
-//   Use this route middleware on any resource that needs to be protected.  If
-//   the request is authenticated (typically via a persistent login session),
-//   the request will proceed.  Otherwise, the user will be redirected to the
-//   login page.
 function ensureAuthenticated(req, res, next) {
   if (req.user) {
-      // user is authenticated
       next();
   } else {
-      // return unauthorized
       res.send(401, "Unauthorized");
   }
 }
 
-// Simple route middleware to ensure user is authenticated.
-//   Use this route middleware on any resource that needs to be protected.  If
-//   the request is authenticated (typically via a persistent login session),
-//   the request will proceed.  Otherwise, the user will be redirected to the
-//   login page.
+// Simple route middleware to ensure user is an admin.
 function ensureAdmin(req, res, next) {
   if (req.user && req.user.isAdmin) {
-      // user is authenticated
       next();
   } else {
-      // return unauthorized
       res.send(401, "Unauthorized");
   }
 }
