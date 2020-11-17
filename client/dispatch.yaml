@@ -1,0 +1,5 @@
+dispatch:
+    - url: "poppleapi.asennyey.com/*"
+      service: api
+    - url: "popple.asennyey.com/*"
+      service: default

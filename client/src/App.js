@@ -1,4 +1,5 @@
 import React, {useState, useContext} from 'react';
+import 'bootstrap/dist/css/bootstrap.min.css';
 import './App.css';
 import {
   BrowserRouter as Router,
@@ -18,6 +19,7 @@ import ContentContainer from './shared/ContentContainer'
 import ErrorBoundary from './ErrorBoundary'
 import { Helmet } from 'react-helmet'
 import StudentContainer from './student/StudentContainer';
+import SignUp from './SignUp';
 
 export default function App(){
 
@@ -52,6 +54,9 @@ export default function App(){
 						<Switch>
 							<Route path="/" exact>
 								<HomePage/>
+							</Route>
+							<Route path="/signUp" exact>
+								<SignUp/>
 							</Route>
 							<Route path="/tos" exact>
 								<TOS/>

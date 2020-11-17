@@ -1,7 +1,8 @@
 import React from 'react';
 import UserContext from '../contexts/UserContext';
 import style from './UserCircle.module.css';
-import {api} from '../config'
+import {api} from '../config';
+import {BsPeopleCircle} from 'react-icons/bs'
 
 export default class UserCircle extends React.Component{
     constructor(props){
@@ -64,7 +65,11 @@ export default class UserCircle extends React.Component{
         return (
             <>
                 <a onClick={this.onProfileClick} className={style.profilePhoto} href="#" ref={this.pictureRef}>
-                    <img src={this.context.user.photo} alt="User"></img>
+                    {
+                        this.context.user.photo?
+                        <img src={this.context.user.photo} alt="User"></img>:
+                        <BsPeopleCircle style={{width:30, height:30, color:"black"}}/>
+                    }
                 </a>
                 {this.state.showModal?(
                     <div className={style.profileModal} onBlur={this.onModalBlur} ref={this.modal} tabIndex={0}>
