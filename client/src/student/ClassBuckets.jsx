@@ -181,7 +181,7 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
                             flex:"1",
                             padding:"5px"
                         }}>
-                            <h2 style={{width:"100%", paddingLeft:"10px"}}>Required Courses</h2>
+                            <h3 style={{width:"100%", paddingLeft:"10px"}}>Required Courses</h3>
                             <BucketItem bucket={buckets[0]} 
                                         items={nodes.filter(node=>node.bucket===buckets[0].id).map(e=>{
                                             return {
@@ -202,7 +202,7 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
                             alignItems: "center",
                             padding:"5px"
                         }}>
-                            <h2 style={{width:"100%", paddingLeft:"10px"}}>Your Plan</h2>
+                            <h3 style={{width:"100%", paddingLeft:"10px"}}>Your Plan</h3>
                             {buckets.filter(e=>e.label!==PRIMARY_BUCKET).map((bucket)=>
                                 <BucketItem bucket={bucket} 
                                             key={`bucket-item-${bucket.id}`}
@@ -257,11 +257,11 @@ function BucketItem({bucket,items, isDropDisabled, missing, onClassClick, popula
                     style={getStyle(snapshot.isDraggingOver && !isDropDisabled)}
                     {...provided.droppableProps}
                 >
-                    <h3 style={{'marginBlockStart':'.3em', 'marginInlineStart':'.3em', marginBlockEnd:".3em", marginInlineEnd:".3em"}}>{
+                    <h5 style={{'marginBlockStart':'.3em', 'marginInlineStart':'.3em', marginBlockEnd:".3em", marginInlineEnd:".3em"}}>{
                         isCollapseOpen?
                         <BiCaretDown onClick={(e)=>setCollapseOpen(!isCollapseOpen)} style={{margin:"auto 0", padding:"0px 1%"}}/>:
                         <BiCaretRight onClick={()=>setCollapseOpen(!isCollapseOpen)} style={{margin:"auto 0", padding:"0px 1%"}}/>
-                    }{bucket.label}</h3>
+                    }{bucket.label}</h5>
                     <Collapse isOpened={isCollapseOpen||snapshot.isDraggingOver}>
                         <div style={{marginLeft:"25px"}}>
                         {

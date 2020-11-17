@@ -8,7 +8,7 @@ export default function HomePage(props){
 
     return (
         <div>
-            <h2 style={{textAlign:"center"}}>Customizing your four year plan made easy.</h2>
+            <h4 style={{textAlign:"center"}}>Customizing your four year plan made easy.</h4>
             <br/>
             {!user?<div style={{width:"100%", textAlign:"center"}}><a className={style.loginButton} href="/login">Login</a></div>:<></>}
         </div>
