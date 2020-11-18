@@ -18,10 +18,9 @@ var studentRouter = require('./routes/student')
 var app = express();
 db.connect();
 
-app.enable('trust proxy');
-
 let cookieSettings = {}
 if(process.env.NODE_ENV!=="development"){
+  app.enable('trust proxy');
   cookieSettings = {sameSite:'none', secure:true}
 }
 
@@ -40,7 +39,7 @@ app.use(cors({credentials: true, origin: Object.values(config.FRONTEND_URLS)}));
 
 /** Redirect to https. */
 app.use (function (req, res, next) {
-	if (req.secure) {
+	if (req.secure || process.env.NODE_ENV==='development') {
 		// request was via https, so do no special handling
 		next();
 	} else {
