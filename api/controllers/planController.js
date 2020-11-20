@@ -10,75 +10,24 @@ var ClassService = require('../services/classService');
 /*
 This method ties to an api hook, meant to retrieve the graphic version of the plan for the student.
 */
-module.exports.retrievePlanGraph = function(studentId){
-    return new Promise(async (resolve, reject)=>{
-        var student = await Student.findById(studentId).exec();
-        
-        var nodes = [];
-        for(let plan of student.plans){
-            nodes = nodes.concat(plan.nodes);
-            let filter = [];
-            nodes = nodes.filter((e, i, arr)=>{
-                if(filter.some(f=>f.id==e.id)){
-                    return false;
-                }
-                filter.push(e);
-                return true;
-            })
-        }
-        var tree = await returnVisualTree(nodes, student);
-        resolve(tree);
-    })
-}
-
- /* 
- Returns two sets of data, a list of nodes and a list of edges between nodes.
- Parameters: The list of plannodes, top level.
- Returns: Two sets of data.
- */
-returnVisualTree = async function(planNodes, student){
-    var nodes = [];
-    var edges = [];
-    var nextLevel = [];
-    var map = {};
-    var i = 0;
-    while(planNodes&&planNodes.length){
-        nextLevel = [];
-        const curNodes = await PlanNode.find({'_id':{$in:planNodes}}).exec(); // Get the list of nodes for the array of ids.
-        for(let curNode of curNodes){
-            let childNodes = curNode.children; // Get all nodes that have a child of the current node.
-            if(!(curNode._id in map)){
-                map[curNode._id] = i;
-                i= i+1;
-            }
-            for(let edge of childNodes){
-                if(!(edge._id in map)){
-                    map[edge._id] = i;
-                    i= i+1;
-                }
-                if(!edges.some(e=>e.from===edge._id&&e.to===curNode._id)){
-                    edges.push({source:edge._id, target:curNode._id});
-                }
-                nextLevel.push(edge._id);
-            }
-            if(!nodes.some(e=>e.id === map[curNode._id])){
-                const classObj = await Class.findById(curNode.class).exec();
-                let nodeInfo = {id:curNode._id, title:classObj.name}
-                if(ClassService.isCompleted(curNode, student)){
-                    nodes.push({...nodeInfo, type:"completed"});
-                }else if(student.options.includes(curNode.id)){
-                    nodes.push({...nodeInfo, type:"inProgress"});
-                }else{
-                    nodes.push({...nodeInfo, type:"toDo"});
-                }
-            }
-        }
-        planNodes = nextLevel;
+module.exports.retrievePlanGraph = async function(student){
+    let plans = await Plan.find({'_id':{$in:student.plans}}).populate('requirements', 'requirements').exec();
+    let nodes = (await getClassesFromPlans(student.plans)).map(e=>{
+        return {id:e._id, title:e.name, type:"toDo"}
+    });
+    let reqs = []
+    for(let plan of plans){
+        reqs = reqs.concat(plan.requirements.map(e=>e.id));
     }
-
-    return new Promise((resolve, reject)=>{
-        resolve({edges:edges, nodes:nodes})
+    let edges = (await Requirement.find({
+        _id:{
+            $in:reqs
+        }
+    })).map(e=>{
+        return {source:e.from, target:e.to}
     })
+    var tree = {edges, nodes};
+    return tree;
 }
 
 module.exports.getPlans = async function(){
@@ -110,46 +59,59 @@ module.exports.updateSurvey = async function(student, ids){
 }
 
 module.exports.getPlanClasses = async function(student){
-    let queue = [];
-    for(let plan of student.plans){
-        for(let node of plan.nodes){
-            node = await PlanNode.findById(node).exec();
-            queue.push(node)
-        }
-    }
-    let data = findPlanNodeDependencies(queue);
-    data = data.map(e=>e.class).map(e=>{
+    let classes = await getClassesFromPlans(student.plans);
+    return classes.map(e=>{
         return {label:e.name, value:e.id}
-    }).sort((a, b)=>{
-        if ( a.label < b.label ){
-            return -1;
-        }
-        if ( a.label > b.label ){
-            return 1;
-        }
-        return 0
-    })
-    return data;
+    });
 }
 
-/**
- * Return the Plan Node's full dependency list, includes all levels of tree.
- * @param {Array<PlanNode>} ids 
- */
-const findPlanNodeDependencies = (ids) => {
-    let visited = [];
-    let data = [];
-    let queue = [ids];
-    while(queue.length){
-        let node = queue.pop();
-        if(visited.indexOf(node.id)!==-1){
-            continue;
+const getClassesFromPlans= async (plans)=>{
+    let planNodes = (await Plan.find({'_id':{$in:plans}}).populate('nodes').exec()).map(e=>e.nodes);
+    let classes = []
+    for(let plan of planNodes){
+        for(let node of plan){
+            if(node._doc.classes){
+                classes = classes.concat(node._doc.classes)
+            }
         }
-        visited.push(node.id);
-        data.push(node)
-        queue = queue.concat(node.children)
     }
-    return data;
+    classes = await Class.find({'_id':{$in:classes}}).sort({name:1}).exec();
+    return classes;
+}
+
+
+module.exports.addTestPlan = async () =>{
+    let csc110 = await Class.findOne({name:"CSC110"}).exec();
+    let csc120 = await Class.findOne({name:"CSC120"}).exec();
+    let csc210 = await Class.findOne({name:"CSC210"}).exec();
+    let csc245 = await Class.findOne({name:"CSC252"}).exec();
+    let node1 = await PlanNode.create({
+        classes:[csc110]
+    })
+    let node2 = await PlanNode.create({
+        classes:[csc120]
+    })
+    let node3 = await PlanNode.create({
+        classes:[csc210, csc245]
+    })
+    let req1 = await Requirement.create({
+        to:csc120,
+        from:csc110
+    })
+    let req2 = await Requirement.create({
+        to:csc210,
+        from:csc120
+    })
+    let req3 = await Requirement.create({
+        to:csc245,
+        from:csc120
+    })
+    let doc = await Plan.create({
+        name:"TEST",
+        nodes:[node1, node2, node3],
+        requirements:[req1, req2, req3]
+    })
+    return doc._id;
 }
 
 module.exports.updateItemSurvey = async (student, ids) => {
@@ -167,23 +129,6 @@ module.exports.updateItemSurvey = async (student, ids) => {
  */
 module.exports.getItem = async (id) =>{
     return await Plan.findById(id).exec();
-}
-
-/**
- * Return the plan matching the passed in id.
- * @param {mongoose.Schema.Types.ObjectId} id
- * @returns {Array<Document>} array of classes matching passed in id
- */
-module.exports.getClasses = async (id)=>{
-    var classes = [];
-    var plan = await Plan.findById(id).exec();
-    for(let node of plan.nodes){
-        // Get the class corresponding to each top level class in the plan.
-        node = await PlanNode.findById(node).exec();
-        let classNode = await Class.findById(node.class).exec();
-        classes.push(classNode)
-    }
-    return classes;
 }
 
 /**
@@ -224,108 +169,161 @@ module.exports.updatePlan = async (id, name, requirements) =>{
 }
 
 /**
- * Generates a full 8 semesters of buckets.
- * @param {Array<Document>} buckets 
- * @param {ObjectId} studentId 
- */
-const generateBuckets = async (buckets, studentId)=>{
-    var array = [...buckets]
-    // Ensure that there are 8 semesters worth of buckets in the passed in list.
-    if(buckets.length<9){
-        for(let diff = buckets.length-1;diff<8;diff++){
-            let bucket = new Bucket();
-            bucket.studentId = studentId;
-            bucket.name = `Semester ${diff+1}`;
-            bucket.nodes = [];
-            bucket = await bucket.save();
-            array.push(bucket)
-        }
-    }
-    return array
-}
-
-/**
  * Retrieve a user's bucket items.
  * @param {mongoose.Schema.Types.ObjectId} id student id
  * @returns {Array<Document>} array of bucket items, essentially plan nodes with a bucket property.
  */
-module.exports.retrieveBucketItems = async (id) =>{
-    let buckets = await Bucket.find({studentId:id}).populate({path:'nodes', populate:{path:'class', model:'planNode'}}).sort({name:1}).exec();
-    // By default, create a single new bucket.
+module.exports.retrieveBucketItems = async (student) =>{
+    let buckets = await Bucket.find({
+        _id:{
+            $in:student.buckets
+    }}).populate({
+        path:'nodes'
+    }).sort({name:1}).exec();
+    
     if(buckets.length==0){
         let arr = [];
-        let student = await Student.findById(id).exec();
-        let bucket = new Bucket();
-        bucket.studentId = id;
-        bucket.name = "";
-        bucket.nodes = [];
-        bucket = await bucket.save();
         for(let plan of student.plans){
-            plan = await Plan.findById(plan)
-            for(let elem of plan.nodes){
-                elem.bucket = bucket.id
-                arr.push(elem)
+            plan = await Plan.findById(plan).populate('nodes').exec()
+            arr = arr.concat(plan.nodes)
+        }
+        // Create the Plan Node buckets, ie the required classes.
+        let nodeBuckets = []
+        for(let elem of arr){
+            nodeBuckets.push({
+                name : "req-group:" +(elem.name ||""),
+                nodes : elem.classes,
+                planNode: elem._id
+            })
+        }
+        let buckets = Object.values((await Bucket.collection.insertMany(nodeBuckets)).insertedIds);
+
+        // Will want to use student choices here, but for now set to default value.
+        let numSemesters = 8;
+        let enrolledSemesters = ["Fall" , "Spring"];
+
+        // Offset to start from?
+        let currentStanding = 0;
+        let startingYear = (new Date()).getFullYear() - currentStanding;
+
+        let semesterBuckets = []
+        for(let i = 0;i<numSemesters;i++){
+            let currentSemester = enrolledSemesters[i%enrolledSemesters.length];
+            let isStudentEnrolledInWinter = enrolledSemesters.indexOf('Winter') > -1;
+            semesterBuckets.push({
+                name: currentSemester+" "+startingYear
+            })
+            if(currentSemester === "Fall"){
+                if(!isStudentEnrolledInWinter){
+                    startingYear++;
+                }
+            }else if(currentSemester === "Winter"){
+                startingYear++;
             }
         }
-        arr = arr.reduce((unique, item)=>unique.includes(item)?unique:[...unique, item], [])
-        // Add all nodes from plan into first bucket.
-        let filled = [];
-        while(arr.length){
-            let item = arr[0]
-            item = await PlanNode.findById(item)
-            filled.push(item)
-            arr = arr.slice(1)
-            arr = arr.concat(item.children.map(e=>{e.bucket = item.bucket; return e;}))
-        }
-        filled = filled.reduce((unique, item)=>unique.some(e=>e.id===item.id)?unique:[...unique, item], [])
-        bucket.nodes = filled;
-        buckets = [await bucket.save()]
+
+        buckets = buckets.concat(Object.values((await Bucket.collection.insertMany(semesterBuckets)).insertedIds));
+        student.buckets = buckets;
+        await student.save();
     }
 
-    buckets = await generateBuckets(buckets, id);
+    let populatedPlans = await Plan.find({
+        _id:{
+            $in: student.plans
+        }
+    }).populate('requirements').populate('nodes').exec()
+
+    let reqMap = {}
+    for(let requirements of populatedPlans.map(e=>e.requirements)){
+        for(let req of requirements){
+            if(reqMap[req.to]){
+                reqMap[req.to].push(req.from)
+            }else{
+                reqMap[req.to] = req.from?[req.from]:[]
+            }
+        }
+    }
+    let planNodes = populatedPlans.map(e=>e.nodes);
+    let nodeIds = []
+    for(let node of planNodes){
+        nodeIds = nodeIds.concat(node.map(e=>e.id))
+    }
+    let bucketMapping = await Bucket.find({planNode:{$in:nodeIds}}).exec();
+    let bucketMap = {}
+    for(let bucket of bucketMapping){
+        bucketMap[bucket.planNode] = bucket.id;
+    }
+    let originalBucketMap = {}
+    for(let nodes of populatedPlans.map(e=>e.nodes)){
+        for(let node of nodes){
+            for(let classObj of node.classes){
+                originalBucketMap[classObj] = bucketMap[node.id];
+            }
+        }
+    }
 
     // Get all nodes from buckets.
     let data = []
     for(let bucket of buckets){
         for(let item of bucket.nodes){
             item.bucket = bucket
+            item.children = reqMap[item.id] || []
+            item.originalBucket = originalBucketMap[item.id]
             data.unshift(item)
         }
     }
 
-    return data.sort(function order(key1, key2) { 
-        if (key1.class.name < key2.class.name) return -1; 
-        else if (key1.class.name > key2.class.name) return +1; 
-        else return 0; 
-    });;
+    return data
 }
 
 /**
  * Retrieve a user's buckets.
- * @param {ObjectId} id StudentID
+ * @param {Student} student student
  */
-module.exports.retrieveBuckets = async (id) =>{
-    return await Bucket.find({studentId:id}).sort({name:1}).exec();
+module.exports.retrieveBuckets = async (student) =>{
+    let buckets =  await Bucket.find({_id:{
+        $in: student.buckets
+    }}).sort({name:1}).exec();
+
+    const semesters = ["SPRING", "SUMMER", "FALL","WINTER"]
+
+    return buckets.sort((a,b)=>{
+        let strA = a.name.toUpperCase().split(" ")
+        let strB = b.name.toUpperCase().split(" ")
+        var semNameA = semesters.indexOf(strA[0]);
+        var semNameB = semesters.indexOf(strB[0]);
+        var numA = +strA[1]
+        var numB = +strB[1]
+        if(numA>numB){
+            return 1;
+        }else if(numB>numA){
+            return -1;
+        }else if(semNameA<semNameB){
+            return -1;
+        }else if(semNameA>semNameB){
+            return 1;
+        }else{
+            return 0;
+        }
+    })
 }
 
 /**
  * Update the passed in bucket with the new item and remove the item from its old bucket.
- * @param {mongoose.Schema.Types.ObjectId} id student id
+ * @param {Student} student student
  * @param {mongoose.Schema.Types.ObjectId} bucket bucket id
  * @param {mongoose.Schema.Types.ObjectId} item item id
  */
-module.exports.updateBucket = async (id, bucket, item) =>{
-    await Bucket.findOneAndUpdate({
-        studentId:id, nodes:item
-    },{
+module.exports.updateBucket = async (from, to, item) =>{
+    await Bucket.findByIdAndUpdate(from,{
         $pull:{nodes:item}
     }).exec();
-    await Bucket.findByIdAndUpdate(bucket,{
+    await Bucket.findByIdAndUpdate(to,{
         $push:{nodes:item}
     }).exec();
 }
 
-module.exports.getBucketItemInfo = async (student, id) =>{
-    let node = await PlanNode.findById(id).exec();
-    return {name:node.class.name, credits:node.class.credits, planProgress:0, graduationProgress:0};
+module.exports.getBucketItemInfo = async (id) =>{
+    let node = await Class.findById(id).exec();
+    return {name:node.name, credits:node.credits, planProgress:0, graduationProgress:0};
 }

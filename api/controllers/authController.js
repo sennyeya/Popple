@@ -35,7 +35,8 @@ module.exports = {
             user = new User({
                 username,
                 displayName: firstName+" "+lastName,
-                password: hashed
+                password: hashed,
+                isAdmin: true
             })
             return (await user.save());
         }else{

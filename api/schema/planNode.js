@@ -1,23 +1,14 @@
 var mongoose = require('mongoose');
-
-var Schema = mongoose.Schema;
+const Schema = mongoose.Schema;
+var {ObjectId, Number, String} = mongoose.Schema.Types;
 
 /**
- * Plan node. DEPRECATED.
+ * Plan node. 
  */
 var planNodeSchema = new Schema({
-    class:{type:Schema.Types.ObjectId, ref:'classes'},
-    children:[{type:Schema.Types.ObjectId, ref:'plannodes'}]
+    name:String,
+    classes:[{type:ObjectId, ref:'classes'}],
+    flags:[{type:ObjectId, ref:'flags'}]
 })
-
-var autoPopulateChildren = function(next) {
-    this.populate('children');
-    this.populate('class');
-    next();
-};
-
-planNodeSchema
-.pre('findOne', autoPopulateChildren)
-.pre('find', autoPopulateChildren)
 
 module.exports.PlanNode = mongoose.model('plannodes',planNodeSchema)

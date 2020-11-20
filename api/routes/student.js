@@ -17,20 +17,15 @@ router.use(async (req, res, next) => {
         if(!student){
             student = new Student({
                 name:req.user.displayName,
-                plans:[],
-                completedClasses:[],
-                options:[],
-                semesterPlan:[],
-                desiredCredits:15,
                 user:req.user.id,
-                hasAnsweredPlanSurvey:false,
+                lastAnsweredPlanSurvey:false,
                 lastAnsweredClassSurvey:null
             });
             await student.save();
         }
         req.student = student;
+        next();
     }
-    next();
 });
 
 /**
@@ -83,10 +78,10 @@ const outsideCurrentSemester = (lastSurveyDate) =>{
  * Ensure the student has answered the plan and class surveys.
  */
 router.use(async (req, res, next)=>{
-    if(!req.student.lastAnsweredPlanSurvey){
+    if(outsideCurrentSemester(req.student.lastAnsweredPlanSurvey)){
         return res.json({error:"NO_VALID_PLAN_SURVEY",message:"This student has not answered a plan survey yet."})
-    }else if(outsideCurrentSemester(req.student.lastAnsweredClassSurvey)){
-        return res.json({error:"NO_VALID_CLASS_SURVEY",message:"This student has not answered a class survey yet."})
+    //}else if(outsideCurrentSemester(req.student.lastAnsweredClassSurvey)){
+    //    return res.json({error:"NO_VALID_CLASS_SURVEY",message:"This student has not answered a class survey yet."})
     }
     next();
 })
@@ -106,30 +101,27 @@ router.post('/plan/add', async (req, res)=>{
 /**
  * Get the student's plan graph.
  */
-router.post('/plan/tree', async (req, res)=>{
+router.get('/plan/tree', async (req, res)=>{
     const plan = await PlanController.retrievePlanGraph(req.student);
     res.json({tree:plan});
 })
 
 /**
-  * This method creates a plan for the passed in name of the plan.
-  */
- router.post('/bucket/items', async function(req, res){
+ * Get a student's bucket items, mapped to buckets.
+ */
+ router.get('/bucket/items', async function(req, res){
     const buckets = await PlanController.retrieveBucketItems(req.student);
-    let retVal = buckets.map(e=>{
-        return {id:e.id, label:e.class.name, bucket:e.bucket.id, children:e.children.map(e=>e.id)}
-    })
-    res.json(retVal);
+    res.json(buckets.map(e=>{
+        return {id:e.id, label:e.name, bucket:e.bucket.id, children:e.children.map(e=>e._id), originalBucket:e.originalBucket}
+    }));
 })
 
 /**
- * Returns the current user's buckets(semesters).
+ * Returns the current user's buckets, planning and requirements.
  */
-router.post('/bucket/buckets', async function(req, res){
+router.get('/bucket/buckets', async function(req, res){
     let buckets = await PlanController.retrieveBuckets(req.student);
-    buckets = buckets.map(e=>{
-        return {id:e.id, label:e.name}
-    })
+    buckets = buckets.map(e=>{return {id:e.id, label:e.name}})
     res.json(buckets);
 })
 
@@ -137,7 +129,7 @@ router.post('/bucket/buckets', async function(req, res){
  * Move an item to a new bucket.
  */
 router.post('/bucket/move', async function(req, res){
-    await PlanController.updateBucket(req.student, req.body.bucket, req.body.id)
+    await PlanController.updateBucket(req.body.from, req.body.to, req.body.id)
     res.json({})
 })
 
@@ -145,7 +137,7 @@ router.post('/bucket/move', async function(req, res){
  * Move an item to a new bucket.
  */
 router.get('/bucket/itemInfo', async function(req, res){
-    res.json(await PlanController.getBucketItemInfo(req.student, req.query.id))
+    res.json(await PlanController.getBucketItemInfo(req.query.id))
 })
 
 module.exports = router;

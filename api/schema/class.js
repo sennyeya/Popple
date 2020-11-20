@@ -1,6 +1,6 @@
 var mongoose = require('mongoose');
-
-var Schema = mongoose.Schema;
+const Schema = mongoose.Schema;
+var {ObjectId, Number, String} = mongoose.Schema.Types;
 
 /**
  * Class as in the physical class, will be mapped to a requirement for each plan. The same class can have different pre-requisites based on which major you are in, think DATA363 and MATH323.
@@ -8,9 +8,9 @@ var Schema = mongoose.Schema;
  */
 classSchema =  new Schema({
     name: String,
-    requirements: [{type:Schema.Types.ObjectId, ref:"requirements"}],
-    relevantAlternatives: [{type:Schema.Types.ObjectId, ref:"classes"}],
-    credit: {type:Number, default: 3}
+    relevantAlternatives: [{type:ObjectId, ref:"classes"}],
+    credit: {type:Number, default: 3},
+    flags:[{type:ObjectId, ref:'flags'}]
 })
 
 module.exports.classSchema = classSchema;

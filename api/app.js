@@ -14,6 +14,7 @@ var dataRouter = require('./routes/data');
 var adminRouter = require('./routes/admin');
 var authRouter = require('./routes/auth');
 var studentRouter = require('./routes/student')
+var testRouter = require('./routes/test')
 
 var app = express();
 db.connect();
@@ -47,6 +48,10 @@ app.use (function (req, res, next) {
 		res.redirect('https://' + req.headers.host + req.url);
 	}
 });
+
+if(process.env.NODE_ENV==="development"){
+  app.use('/test', testRouter)
+}
 
 // Routes
 app.use('/auth', authRouter)

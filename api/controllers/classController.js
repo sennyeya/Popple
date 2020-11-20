@@ -64,14 +64,6 @@ module.exports = {
         return await Class.findById(id).exec()
     },
 
-    getRequirements: async function(id){
-        if(!id){
-            return (await Requirement.find({}).exec()).map(e=>e.classTo);
-        }
-        // Need to prevent cycles in this call.
-        return (await Requirement.find({'classTo': id}).exec()).map(e=>e.classFrom).filter((e,i,a)=>a.map(f=>f.id).indexOf(e.id)===i);
-    },
-
     getPossibleRequirements: async function(id){
         var possible = await Requirement.find({classFrom:id}).exec();
         var options = await Requirement.find().exec();
@@ -107,5 +99,12 @@ module.exports = {
             }
         }
         return options.filter(e=>retVal.includes(e.classTo.id));
-    }
+    },
+
+    flags:[
+        "TIER 1 ARTS",
+        "TIER 1 SCIENCE",
+        "TIER 2 ARTS",
+        "TIER 2 SCIENCE"
+    ],
 }

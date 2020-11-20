@@ -1,6 +1,6 @@
 import React from 'react';
 import UserContext from '../contexts/UserContext'
-import './Graph.css'
+import style from './Graph.module.css'
 import {GraphView} from 'react-digraph';
 import {LoadingIndicator} from '../shared/Loading';
 
@@ -64,7 +64,7 @@ class GraphItem extends React.Component{
 
     componentDidMount(){
         let {API} = this.props;
-        API.post("/student/plan/tree").then((json) => {
+        API.get("/student/plan/tree").then((json) => {
             this.setState({data:json.tree, isLoading:false})
         })
     }
@@ -86,7 +86,7 @@ class GraphItem extends React.Component{
             return <LoadingIndicator/>
         }
         return (
-            <div className="graph-container">
+            <div className={style.graphContainer}>
                 <GraphView
                     ref={el => (this.GraphView = el)}
                     nodeKey={NODE_KEY}

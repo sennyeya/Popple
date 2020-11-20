@@ -13,7 +13,7 @@ function ClassItem(){
             <p>Edit an existing class or add a new one.</p>
             <AsyncSelect 
                 url={()=>{
-                    return API.get('/admin/classPicklist')
+                    return API.get('/admin/classes')
                 }} 
                 label="Classes"
                 onClick={(e,val)=>{
@@ -41,7 +41,7 @@ function AddClassModal(props){
 
     const submitForm = async () =>{
         setLoading(true)
-        await API.post("/admin/saveClassItem", {
+        await API.post("/admin/class/update", {
             name:name, 
             credits:credits, 
             requirements: selected
@@ -61,7 +61,7 @@ function AddClassModal(props){
                     setName(e.target.value)
                 }}/>
                 <AsyncSelect url={()=>{
-                                return API.get('/admin/classPicklist')
+                                return API.get('/admin/classes')
                             }}
                             multi
                             label="Required Classes"
@@ -105,7 +105,7 @@ function EditClassModal(props){
         if(!item){
             return undefined
         }
-        API.get('/admin/getRequirements', {id:item.value}).then(json=>{
+        API.get('/admin/class/requirements', {id:item.value}).then(json=>{
             if(active){
                 setSelected(json)
             }
@@ -119,7 +119,7 @@ function EditClassModal(props){
 
     const submitForm = () =>{
         setLoading(true)
-        API.post("/admin/saveClassItem", {
+        API.post("/admin/class/update", {
             id: item.value,
             name:name, 
             credits:credits, 
@@ -140,7 +140,7 @@ function EditClassModal(props){
                         setName(e.target.value)
                     }} defaultValue={item?item.label:""}/>
                     <AsyncSelect url={()=>{
-                                    return API.get('/admin/classPicklist')
+                                    return API.get('/admin/classes')
                                 }} 
                                 multi
                                 label="Requirements"
