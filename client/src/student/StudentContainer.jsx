@@ -73,7 +73,7 @@ export default function StudentContainer(){
             else if(json.error==="NO_VALID_CLASS_SURVEY") {
                 setClassSurveyDone(false)
                 await checkClassSurvey();
-                return  await StudentAPI.post(route, data);
+                return await StudentAPI.post(route, data);
             }else{
                 throw new Error(json.error)
             }
