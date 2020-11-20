@@ -14,7 +14,7 @@ function PlanItem(){
             <p>Edit an existing class or add a new one.</p>
             <AsyncSelect 
                 url={()=>{
-                    return API.get('/admin/planPicklist')
+                    return API.get('/admin/plans')
                 }} 
                 label="Plans"
                 loading={loading}
@@ -42,7 +42,7 @@ function AddPlanModal(props){
 
     const submitForm = () =>{
         setLoading(true)
-        API.post("/admin/savePlanItem", {
+        API.post("/admin/plan/update", {
             name:name,
             requirements: selected
         }).then(()=>{
@@ -63,7 +63,7 @@ function AddPlanModal(props){
                     setName(e.target.value)
                 }}/>
                 <AsyncSelect url={()=>{
-                                return API.get('/admin/classPicklist')
+                                return API.get('/admin/classes')
                             }}
                             multi
                             label="Required Classes"
@@ -101,7 +101,7 @@ function EditPlanModal(props){
         if(!item){
             return undefined
         }
-        API.get('/admin/getClasses', {id:item.value}).then(res=>setSelected(res))
+        API.get('/admin/plan/item', {id:item.value}).then(res=>setSelected(res))
     }, [item])
 
     const handleClose = ()=>{
@@ -110,7 +110,7 @@ function EditPlanModal(props){
 
     const submitForm = () =>{
         setLoading(true)
-        API.post("/admin/savePlanItem", {
+        API.post("/admin/plan/update", {
             id: item.value,
             name:name,
             requirements: selected
@@ -131,7 +131,7 @@ function EditPlanModal(props){
                     setName(e.target.value)
                 }} defaultValue={item?item.label:""}/>
                 <AsyncSelect url={()=>{
-                                return API.get('/admin/classPicklist')
+                                return API.get('/admin/classes')
                             }} 
                             multi
                             label="Required Classes"

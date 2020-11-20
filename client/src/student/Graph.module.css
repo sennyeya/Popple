@@ -3,3 +3,8 @@
         display: none;
     }
 }
+
+.graphContainer{
+    min-height:600px;
+    height: 100%;
+}

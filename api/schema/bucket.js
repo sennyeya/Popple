@@ -4,6 +4,7 @@
 
 var mongoose = require("mongoose");
 const Schema = mongoose.Schema;
+var {ObjectId, Date, String} = mongoose.Schema.Types;
 
 /**
  * Stores a user's semester plan. Each bucket should have a list of sub-buckets for each requirement on a plan. Think the collapseable panes on the UAccess advisement report.
@@ -12,21 +13,12 @@ const Schema = mongoose.Schema;
 const bucketSchema = new Schema({
   name: String,
   // List of classes in the bucket.
-  nodes: [{type:Schema.Types.ObjectId, ref:"plannodes"}],
+  nodes: [{type:ObjectId, ref:"classes"}],
   // Corresponding semester, probably index.
-  semesterStart: Date,
-  semesterEnd: Date,
-  studentId: {type:Schema.Types.ObjectId, ref:"students"}
+  semester: {type:ObjectId, ref:"semesters"},
+
+  planNode: {type:ObjectId, ref:'plannodes'}
 });
-
-var autoPopulate = function(next) {
-    this.populate('nodes');
-    next();
-};
-
-bucketSchema
-.pre('findOne', autoPopulate)
-.pre('find', autoPopulate)
 
 const Bucket = mongoose.model("buckets", bucketSchema);
 

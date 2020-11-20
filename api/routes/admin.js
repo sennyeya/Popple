@@ -7,7 +7,7 @@ var router = express.Router();
 /**
  * Add a new class.
  */
-router.post("/addClass", async (req, res)=>{
+router.post("/class/add", async (req, res)=>{
     try{
         await classController.addClass(req.body.className, req.body.classRequirements, req.body.credits, req.body.equalClasses)
         res.json({});
@@ -16,16 +16,16 @@ router.post("/addClass", async (req, res)=>{
     }
 });
 
-router.post("/addPlan", (req, res)=>{
+router.post("/plan/add", (req, res)=>{
 
 })
 
 /**
  * Return the list of possible classes to choose.
  */
-router.get("/classPicklist", async (req, res)=>{
+router.get("/classes", async (req, res)=>{
     var classes = (await classController.getClasses()).map(e=>{
-        return {value: elem.id, label:elem.name, credits:elem.credit}
+        return {value: e.id, label:e.name, credits:e.credit}
     }).sort((a,b)=>{
         var depNameA = a.label.substring(0, a.label.search(/[0-9]/));
         var depNameB = b.label.substring(0, b.label.search(/[0-9]/));
@@ -49,35 +49,35 @@ router.get("/classPicklist", async (req, res)=>{
 /**
  * Return the list of possible plans to choose.
  */
-router.get("/planPicklist", async (req, res)=>{
+router.get("/plans", async (req, res)=>{
     res.send((await planController.getPlans()).map(e=>{return {value:e.id, label:e.name}}))
 })
 
 /**
  * Get details for a specific plan item.
  */
-router.get("/getPlanItem", async (req,res)=>{
+router.get("/plan/item", async (req,res)=>{
     res.send({item: await planController.getItem(req.query.id)})
 })
 
 /**
  * Return a list of all classes for a specific plan.
  */
-router.get("/getClasses", async (req, res)=>{
+router.get("/plan/classes", async (req, res)=>{
     res.send((await planController.getClasses(req.query.id)).map((e,i)=>{return {value:e.id, label:e.name}}))
 })
 
 /**
  * Return the class item matching the passed in id.
  */
-router.get("/getClassItem", async (req, res)=>{
+router.get("/class/item", async (req, res)=>{
     res.send({item: await classController.getItem(req.query.id)})
 })
 
 /**
  * Return a list of requirements, class->queryClass.
  */
-router.get("/getRequirements", async (req, res)=>{
+router.get("/class/requirements", async (req, res)=>{
     var classes = await classController.getRequirements(req.query.id);
     res.send(classes.map((e, i)=>{return {value:e.id, label: e.name}}))
 })
@@ -134,7 +134,7 @@ router.get("/getRequirements", async (req, res)=>{
 })
 */
 
-router.post('/saveClassItem', async (req, res)=>{
+router.post('/class/update', async (req, res)=>{
     if(req.body.id){   
         await classController.updateClass(req.body.id, req.body.name, req.body.requirements.map(e=>e.value), req.body.credits, []);
         res.send({success:true})
@@ -144,7 +144,7 @@ router.post('/saveClassItem', async (req, res)=>{
     res.send({success:true})
 })
 
-router.post("/savePlanItem", async (req, res)=>{
+router.post("/plan/update", async (req, res)=>{
     if(req.body.id){   
         await planController.updatePlan(req.body.id, req.body.name, req.body.requirements.map(e=>e.value), []);
         res.send({success:true})

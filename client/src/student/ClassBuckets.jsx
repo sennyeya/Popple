@@ -6,9 +6,9 @@ import {Collapse} from 'react-collapse';
 import {BiCaretDown, BiCaretRight, BiError} from 'react-icons/bi';
 import {BsGearFill, BsList, BsListNested} from 'react-icons/bs';
 import style from './ClassBuckets.module.css';
-import {Form, InputGroup} from 'react-bootstrap';
+import {Form} from 'react-bootstrap';
 
-const PRIMARY_BUCKET = "";
+const PRIMARY_BUCKET = "req-group:";
 const grid = 8;
 
 export default function ClassBuckets({API, setSelected, openClassModal}){
@@ -49,16 +49,17 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
 
         API.post(`/student/bucket/move`, {
                     id:filteredArr[sourceIndex].id,
-                    bucket:destination
+                    from:source,
+                    to:destination
                 })
     };
 
     const removeDependents = (dependents)=>{
         for(let element of dependents){
-            let mainBucket = buckets[0].id
+            let mainBucket = element.originalBucket
             move(
                 element.bucket, 
-                mainBucket, 
+                element.originalBucket, 
                 nodes.filter(e=>e.bucket===element.bucket).indexOf(element), 
                 dependents.filter(e=>e.bucket===mainBucket).length
             )
@@ -94,7 +95,6 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
                 retVal.push(elem)
             }
         }
-        console.log(retVal)
         return retVal
     }
 
@@ -105,11 +105,12 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
         }
 
         let currentNode = nodes.filter(e=>e.bucket===source.droppableId)[source.index];
-        var bucket = buckets.filter(e=>e.id===destination.droppableId)[0];
-        var futureBuckets = buckets.filter(e=>e.index>bucket.index&&e.index!==0);
+        var futureBuckets = buckets.filter(e=>!isPrimary(e));
         var dependents = getDependents(currentNode, nodes.filter(e=>futureBuckets.some(f=>f.id===e.bucket)));
 
-        if(dependents.length>0 && source.droppableId !== destination.droppableId && source.droppableId!==buckets.filter(e=>e.label===PRIMARY_BUCKET).id){
+        if(dependents.length>0 && 
+            source.droppableId !== destination.droppableId && 
+            !buckets.some(e=>isPrimary(e)&&source.droppableId!==e.id)){
             setModalMessage(getModalRequirementMessage(currentNode, dependents))
             setModalOpen(true)
             removeDependents(dependents);
@@ -131,6 +132,10 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
         }
     };
 
+    const isPrimary = (bucket) => {
+        return bucket.label.indexOf(PRIMARY_BUCKET)>-1
+    }
+
     const onClassClick = React.useCallback((id)=>{
         setSelected(id)
         openClassModal()
@@ -138,11 +143,9 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
 
     React.useEffect(()=>{
         if(loading){
-            API.post("/student/bucket/items").then(json=>{
-                setNodes(json.map(e=>{
-                    return {id:e.id, label:e.label, bucket:e.bucket, children:e.children}
-                }))
-                API.post("/student/bucket/buckets").then(json=>{
+            API.get("/student/bucket/items").then(json=>{
+                setNodes(json)
+                API.get("/student/bucket/buckets").then(json=>{
                         setBuckets(json.map((e,index)=>{
                             return {id:e.id, label:e.label, index}
                         }))
@@ -156,8 +159,11 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
         if(!buckets||!buckets.length){
             return;
         }
-        var futureBuckets = buckets.filter(e=>e.index!==0);
-        var primaryBucketItems = nodes.filter(e=>e.bucket===buckets.filter(f=>f.label===PRIMARY_BUCKET)[0].id)
+        var futureBuckets = buckets.filter(e=>!isPrimary(e));
+        var primaryBucketItems = nodes.filter(e=>
+            buckets.filter(f=>isPrimary(f))
+                    .some(f=>f.id===e.bucket)
+        )
         setMissingClasses(getClassesWithMissingDependencies(primaryBucketItems, nodes.filter(e=>futureBuckets.some(f=>f.id===e.bucket))));
     }, [nodes, buckets])
 
@@ -177,18 +183,17 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
 
     const primaryBucket = React.useMemo(()=>{
         if(bucketItems.length){
-            let {bucket, items} = bucketItems[0]
-            return <BucketSearchColumn bucket={bucket} 
-                        items={items}
+            let bucketsAndItems = bucketItems.filter(e=>e.bucket.label.indexOf(PRIMARY_BUCKET)>-1);
+            return <BucketSearchColumn bucketItems={bucketsAndItems}
                         missing={missingClasses}
-                        populatedBuckets={nodes.filter(e=>buckets.filter(f=>f.id===e.bucket)[0].index>0)} 
+                        populatedBuckets={nodes.filter(e=>buckets.filter(f=>f.id!==e.bucket&&!isPrimary(f)))} 
                         onClassClick={onClassClick}
                     />
         }
     }, [bucketItems, missingClasses, onClassClick, nodes, buckets]);
 
     const otherBuckets = React.useMemo(()=>{
-        return bucketItems.filter(e=>e.bucket.label!==PRIMARY_BUCKET).map(({bucket, items})=>
+        return bucketItems.filter(e=>e.bucket.label.indexOf(PRIMARY_BUCKET)===-1).map(({bucket, items})=>
             <>
                 <BucketItem bucket={bucket} 
                             key={`bucket-item-${bucket.id}`}
@@ -263,12 +268,34 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
     )
 }
 
-function BucketSearchColumn({bucket,items, missing, onClassClick, populatedBuckets}){
+function BucketSearchColumn({bucketItems, missing, onClassClick, populatedBuckets}){
     const [search, setSearch] = React.useState("")
+
+    const bucketComponents = React.useMemo(()=>
+        bucketItems.map(({bucket, items})=>
+        {
+            let filtered = items.filter(e=>!search || e.label.toLowerCase().indexOf(search.toLowerCase())>-1);
+            if(!filtered.length && search){
+                return <></>
+            }
+            return (
+                <>
+                    <BucketItem bucket={{...bucket, label:bucket.label.substring(bucket.label.indexOf(PRIMARY_BUCKET)+PRIMARY_BUCKET.length +1)}} 
+                        items={filtered}
+                        missing={missing}
+                        bucketMessage={search?"No classes match that search.":"No classes left to plan!"}
+                        populatedBuckets={populatedBuckets}
+                        onClassClick={onClassClick}/>
+                        <hr/>
+                </>
+            )
+        }
+        )
+    , [bucketItems, missing, onClassClick, populatedBuckets, search])
 
     return (
         <>
-            <div style={{paddingTop:"5px", width:"90%", margin:"0 auto"}}>
+            <div style={{padding:"5px", width:"90%", margin:"0 auto"}}>
                 <Form.Control
                     type="text"
                     placeholder="Search"
@@ -277,12 +304,8 @@ function BucketSearchColumn({bucket,items, missing, onClassClick, populatedBucke
                     onChange={e=>setSearch(e.target.value)}
                 />
             </div>
-            <BucketItem bucket={bucket} 
-                        items={items.filter(e=>!search || e.label.toLowerCase().indexOf(search.toLowerCase())>-1)}
-                        missing={missing}
-                        bucketMessage={search?"No classes match that search.":"No classes left to plan!"}
-                        populatedBuckets={populatedBuckets}
-                        onClassClick={onClassClick}/>
+            <hr/>
+            {bucketComponents}
         </>
     )
 }
@@ -324,7 +347,7 @@ function BucketItem({bucket,items, missing, onClassClick, populatedBuckets, coll
                         {
                             items.length||snapshot.isDraggingOver?
                             <ClassList items={items} missing={missing} onClassClick={onClassClick} populatedBuckets={populatedBuckets}/>:
-                            <p>{bucket.label===PRIMARY_BUCKET?bucketMessage:"Add some classes to this semester!"}</p>
+                            <p>{bucketMessage||"Add some classes to this semester!"}</p>
                         }
                         </div>
                     </Collapse>
