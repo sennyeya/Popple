@@ -110,7 +110,7 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
 
         if(dependents.length>0 && 
             source.droppableId !== destination.droppableId && 
-            !buckets.some(e=>isPrimary(e)&&source.droppableId!==e.id)){
+            !isPrimary(buckets.filter(e=>e.id===source.droppableId)[0])){
             setModalMessage(getModalRequirementMessage(currentNode, dependents))
             setModalOpen(true)
             removeDependents(dependents);
