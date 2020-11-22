@@ -30,10 +30,18 @@ module.exports.retrievePlanGraph = async function(student){
     return tree;
 }
 
+/**
+ * Return all plans in the system.
+ */
 module.exports.getPlans = async function(){
     return await Plan.find({}).exec();
 }
 
+/**
+ * DEPRECATED.
+ * @param {*} student 
+ * @param {*} ids 
+ */
 module.exports.addPlans = async function(student, ids){
     return new Promise(async (res, rej)=>{
         var plans = [];
@@ -52,12 +60,21 @@ module.exports.addPlans = async function(student, ids){
     })
 }
 
+/**
+ * Update a student's plans to the passed in ids.
+ * @param {Student} student 
+ * @param {Array<String>} ids 
+ */
 module.exports.updateSurvey = async function(student, ids){
     student.plans = ids.map(e=>e.value);
     student.lastAnsweredPlanSurvey = new Date();
     return await student.save();
 }
 
+/**
+ * Get a picklist for the classes in a student's plans.
+ * @param {Student} student 
+ */
 module.exports.getPlanClasses = async function(student){
     let classes = await getClassesFromPlans(student.plans);
     return classes.map(e=>{
@@ -65,6 +82,10 @@ module.exports.getPlanClasses = async function(student){
     });
 }
 
+/**
+ * Return a list of all classes that are found in each plan node.
+ * @param {Array<Plan>} plans 
+ */
 const getClassesFromPlans= async (plans)=>{
     let planNodes = (await Plan.find({'_id':{$in:plans}}).populate('nodes').exec()).map(e=>e.nodes);
     let classes = []
@@ -79,41 +100,115 @@ const getClassesFromPlans= async (plans)=>{
     return classes;
 }
 
+/**
+ * Generate a random class name at the desired level, ie level 4 is 400 level classes.
+ * @param {Number} level 
+ */
+const generateRandomName = (level) =>{
+    const alphabet = 'abcdefghijklmnopqrstuvwxyz'.toUpperCase().split("")
+    let str = ""
+    for(let i =3;i>0;i--){
+        str+= alphabet[getRandomInt(0, alphabet.length-1)]
+    }
+    if(level){
+        str+= getRandomInt(level*100, (level+1)*100)
+    }
+    return str;
+}
 
+/**
+ * Generate a random int in the range [from, to].
+ * @param {Number} from 
+ * @param {Number} to 
+ */
+const getRandomInt = (from, to) =>{
+    return Math.floor((Math.random()*(to-from))+from)
+}
+
+/**
+ * Return a random element from the passed in array.
+ * @param {Array<Object>} arr 
+ */
+const getRandomClass = (arr) =>{
+    return arr[getRandomInt(0, arr.length-1)]
+}
+
+/**
+ * Create count number of random classes.
+ * @param {Number} count 
+ */
+const createRandomClasses = async (count) =>{
+    let classes = [];
+    while(count>0){
+        classes.push({
+            name:generateRandomName(count)
+        })
+        count--;
+    }
+    return await Class.insertMany(classes);
+}
+
+/**
+ * Generate count nummber of random requirements for the passed in classes.
+ * @param {Array<Object>} classes 
+ * @param {Number} count 
+ */
+const createRandomRequirements = async (classes, count) =>{
+    let reqs = [];
+    while(count>0){
+        reqs.push({
+            from: getRandomClass(classes),
+            to: getRandomClass(classes)
+        })
+        count--;
+    }
+    return await Requirement.insertMany(reqs);
+}
+
+/**
+ * Generate numClasses number of classes and numReqs number of requirements,
+ *  and tie those to a new PlanNode.
+ * @param {Number} numClasses 
+ * @param {Number} numReqs 
+ */
+const createRandomPlanNode = async (numClasses, numReqs) =>{
+    let classes = await createRandomClasses(numClasses);
+    let reqs = await createRandomRequirements(classes, numReqs);
+    return {
+        node:await PlanNode.create({
+            name:generateRandomName(),
+            classes
+        }),
+        reqs
+    }
+}
+
+/**
+ * Create a new Plan for testing with random classes and requirements.
+ */
 module.exports.addTestPlan = async () =>{
-    let csc110 = await Class.findOne({name:"CSC110"}).exec();
-    let csc120 = await Class.findOne({name:"CSC120"}).exec();
-    let csc210 = await Class.findOne({name:"CSC210"}).exec();
-    let csc245 = await Class.findOne({name:"CSC252"}).exec();
-    let node1 = await PlanNode.create({
-        classes:[csc110]
-    })
-    let node2 = await PlanNode.create({
-        classes:[csc120]
-    })
-    let node3 = await PlanNode.create({
-        classes:[csc210, csc245]
-    })
-    let req1 = await Requirement.create({
-        to:csc120,
-        from:csc110
-    })
-    let req2 = await Requirement.create({
-        to:csc210,
-        from:csc120
-    })
-    let req3 = await Requirement.create({
-        to:csc245,
-        from:csc120
-    })
+    let nodes = [];
+    let reqs = [];
+    let i = 7;
+    while(i>0){
+        let obj = await createRandomPlanNode(getRandomInt(1, 15), getRandomInt(1, 5));
+        nodes.push(obj.node);
+        reqs = reqs.concat(obj.reqs);
+        i--;
+    }
     let doc = await Plan.create({
         name:"TEST",
-        nodes:[node1, node2, node3],
-        requirements:[req1, req2, req3]
+        nodes:nodes,
+        requirements:reqs
     })
     return doc._id;
 }
 
+/**
+ * Update the student's completed classes.
+ * @param {Student} student 
+ * @param {Array<String>} ids 
+ */
 module.exports.updateItemSurvey = async (student, ids) => {
     ids = ids.map(e=>e.value)
     ids = await Class.find({id:{$in:ids}}).exec();
@@ -206,6 +301,7 @@ module.exports.retrieveBucketItems = async (student) =>{
         let currentStanding = 0;
         let startingYear = (new Date()).getFullYear() - currentStanding;
 
+        // Creat the buckets for each semester in the 4 year plan.
         let semesterBuckets = []
         for(let i = 0;i<numSemesters;i++){
             let currentSemester = enrolledSemesters[i%enrolledSemesters.length];
@@ -233,6 +329,7 @@ module.exports.retrieveBucketItems = async (student) =>{
         }
     }).populate('requirements').populate('nodes').exec()
 
+    // Create the requirement map for the plans. Get each class's children.
     let reqMap = {}
     for(let requirements of populatedPlans.map(e=>e.requirements)){
         for(let req of requirements){
@@ -248,6 +345,8 @@ module.exports.retrieveBucketItems = async (student) =>{
     for(let node of planNodes){
         nodeIds = nodeIds.concat(node.map(e=>e.id))
     }
+
+    // Get the original bucket's for each node, ie the plan node with the class.
     let bucketMapping = await Bucket.find({planNode:{$in:nodeIds}}).exec();
     let bucketMap = {}
     for(let bucket of bucketMapping){
@@ -323,6 +422,10 @@ module.exports.updateBucket = async (from, to, item) =>{
     }).exec();
 }
 
+/**
+ * Return the specific class information for a bucket item.
+ * @param {Class} id 
+ */
 module.exports.getBucketItemInfo = async (id) =>{
     let node = await Class.findById(id).exec();
     return {name:node.name, credits:node.credits, planProgress:0, graduationProgress:0};

@@ -4,6 +4,10 @@ import style from './UserCircle.module.css';
 import {api} from '../config';
 import {BsPeopleCircle} from 'react-icons/bs'
 
+/**
+ * The profile photo/icon and menu for user actions.
+ * ie, logout and switching Student/Admin dashboards.
+ */
 export default class UserCircle extends React.Component{
     constructor(props){
         super(props);
@@ -68,7 +72,7 @@ export default class UserCircle extends React.Component{
                     {
                         this.context.user.photo?
                         <img src={this.context.user.photo} alt="User"></img>:
-                        <BsPeopleCircle style={{width:30, height:30, color:"black"}}/>
+                        <BsPeopleCircle style={{width:30, height:30, color:"white"}}/>
                     }
                 </a>
                 {this.state.showModal?(
