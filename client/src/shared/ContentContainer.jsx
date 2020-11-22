@@ -1,20 +1,29 @@
 import React from 'react'
 import style from './ContentContainer.module.css';
-import Footer from './Footer';
+//import Footer from './Footer';
 import Header from './Header';
 
-export default function Container(props){
+/**
+ * The container to hold the actual content for the dashboard.
+ * @param {Object} children 
+ */
+export default function Container({children}){
     return (
         <div className={style.container}>
             <Header/>
             <Content>
-                {props.children}
+                {children}
             </Content>
-            <Footer/>
+            {/*<Footer/>*/}
         </div>
     )
 }
 
+/**
+ * The container to hold just the content specific props, 
+ *  think the actual dashboard.
+ * @param {*} props 
+ */
 function Content(props){
     return (
         <div className={style.content}>

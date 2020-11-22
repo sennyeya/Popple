@@ -4,21 +4,25 @@ import {LoadingIndicator} from '../shared/Loading';
 import {InfoModal} from './ClassModal';
 import {Collapse} from 'react-collapse';
 import {BiCaretDown, BiCaretRight, BiError} from 'react-icons/bi';
-import {BsGearFill, BsList, BsListNested} from 'react-icons/bs';
+import {BsGearFill,  BsCheck, BsArrowsCollapse, BsArrowsExpand} from 'react-icons/bs';
 import style from './ClassBuckets.module.css';
 import {Form} from 'react-bootstrap';
+import Tooltip from '@material-ui/core/Tooltip';
+import Highlight from 'react-highlighter';
 
 const PRIMARY_BUCKET = "req-group:";
 const grid = 8;
+const scrollStyle = {maxHeight:"70vh", overflowY:"auto"}
 
-export default function ClassBuckets({API, setSelected, openClassModal}){
+export default function ClassBuckets({API, setSelected, openClassModal, setGraphNodes}){
     const [loading, setLoading]  = React.useState(true)
     const [nodes, setNodes] = React.useState([])
     const [buckets, setBuckets] = React.useState([]);
     const [missingClasses, setMissingClasses] = React.useState([])
     const [isModalOpen, setModalOpen] = React.useState(false);
     const [modalMessage, setModalMessage] = React.useState("");
-    const [areAllOpen, setAllOpen] = React.useState(true);
+    const [arePlanAllOpen, setPlanAllOpen] = React.useState(true);
+    const [areRequiredCoursesAllOpen, setRequiredCoursesAllOpen] = React.useState(true);
     
     const reorder = (bucket, source, destination)=>{
         var array = [...nodes];
@@ -98,6 +102,16 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
         return retVal
     }
 
+    const isDropEnabled = (currentNode, filteredArr)=>{
+        return currentNode.children.length?currentNode.children.every(e=>filteredArr.some(f=>f.id===e)):true;
+    }
+
+    const getModalMissingMessage = (currentNode, filteredArr) => {
+        let missing = missingClasses.filter(e=>currentNode.children.some(f=>f.id===e.id));
+        return `Class ${currentNode.label} is missing the following prerequisite(s): \n\t${missing.map(e=>e.label).join(", ")}. 
+                    Those prerequisites have been highlighted in red in your Required Courses. For more information on prerequisites, look at the Degree Path diagram.`
+    }
+
     const onDragEnd = ({ source, destination }) => {
         // dropped outside the list
         if (!destination) {
@@ -105,7 +119,10 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
         }
 
         let currentNode = nodes.filter(e=>e.bucket===source.droppableId)[source.index];
-        var futureBuckets = buckets.filter(e=>!isPrimary(e));
+        let currentBucket = buckets.filter(e=>e.id===destination.droppableId)[0]
+        var futureBuckets = buckets.filter(e=>!isPrimary(e)&&e.index>currentBucket.index);
+        var previousBuckets = buckets.filter(e=>e.index<currentBucket.index&&!isPrimary(e))
+        var filteredArr = nodes.filter(e=>previousBuckets.some(f=>f.id===e.bucket))
         var dependents = getDependents(currentNode, nodes.filter(e=>futureBuckets.some(f=>f.id===e.bucket)));
 
         if(dependents.length>0 && 
@@ -114,6 +131,14 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
             setModalMessage(getModalRequirementMessage(currentNode, dependents))
             setModalOpen(true)
             removeDependents(dependents);
+        }else if(isPrimary(currentBucket)&&currentBucket.id!==currentNode.originalBucket){
+            setModalMessage("This class belongs to another requirement group. Moving it there now.")
+            setModalOpen(true);
+            destination.droppableId = currentNode.originalBucket
+        }else if(!isPrimary(currentBucket) && !isDropEnabled(currentNode, filteredArr)){
+            setModalMessage(getModalMissingMessage(currentNode, filteredArr))
+            setModalOpen(true);
+            destination.droppableId = currentNode.originalBucket
         }
 
         if (source.droppableId === destination.droppableId) {
@@ -133,7 +158,7 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
     };
 
     const isPrimary = (bucket) => {
-        return bucket.label.indexOf(PRIMARY_BUCKET)>-1
+        return bucket?bucket.label.indexOf(PRIMARY_BUCKET)>-1:false
     }
 
     const onClassClick = React.useCallback((id)=>{
@@ -167,6 +192,23 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
         setMissingClasses(getClassesWithMissingDependencies(primaryBucketItems, nodes.filter(e=>futureBuckets.some(f=>f.id===e.bucket))));
     }, [nodes, buckets])
 
+    React.useEffect(()=>{
+        if(!nodes||!nodes.length||!buckets){
+            return;
+        }
+        let nodesArr = [...nodes];
+        for(let node of nodesArr){
+            if(missingClasses.some(e=>e.id===node.id)){
+                node.isMissing = true;
+                node.isValid = false;
+            }else if(isPrimary(buckets.filter(e=>e.id===node.bucket)[0])){
+                node.isMissing = false;
+                node.isValid = true;
+            }
+        }
+        setGraphNodes(nodesArr)
+    }, [nodes, missingClasses, buckets])
+
     const bucketItems = React.useMemo(()=>{
         return buckets.map(bucket=>{
             return {
@@ -188,24 +230,27 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
                         missing={missingClasses}
                         populatedBuckets={nodes.filter(e=>buckets.filter(f=>f.id!==e.bucket&&!isPrimary(f)))} 
                         onClassClick={onClassClick}
+                        collapseOpen={areRequiredCoursesAllOpen}
                     />
         }
-    }, [bucketItems, missingClasses, onClassClick, nodes, buckets]);
+    }, [bucketItems, missingClasses, onClassClick, nodes, buckets, areRequiredCoursesAllOpen]);
 
     const otherBuckets = React.useMemo(()=>{
-        return bucketItems.filter(e=>e.bucket.label.indexOf(PRIMARY_BUCKET)===-1).map(({bucket, items})=>
-            <>
-                <BucketItem bucket={bucket} 
-                            key={`bucket-item-${bucket.id}`}
-                            items={items}
-                            missing={missingClasses}
-                            onClassClick={onClassClick}
-                            collapseOpen={areAllOpen}
-                />
-                <hr/>
-            </>
-        )
-    }, [bucketItems, missingClasses, areAllOpen, onClassClick])
+        return (<div style={{...scrollStyle, width:"100%"}}>
+            {bucketItems.filter(e=>e.bucket.label.indexOf(PRIMARY_BUCKET)===-1).map(({bucket, items})=>
+                <>
+                    <BucketItem bucket={bucket} 
+                                key={`bucket-item-${bucket.id}`}
+                                items={items}
+                                missing={missingClasses}
+                                onClassClick={onClassClick}
+                                collapseOpen={arePlanAllOpen}
+                    />
+                    <hr/>
+                </>
+            )}
+        </div>)
+    }, [bucketItems, missingClasses, arePlanAllOpen, onClassClick])
 
     if(loading){
         return <LoadingIndicator/>
@@ -227,7 +272,17 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
                             flex:"1",
                             padding:"5px"
                         }}>
-                            <h3 style={{width:"100%", paddingLeft:"10px"}}>Required Courses</h3>
+                            <h3 style={{width:"100%"}}>
+                                <Tooltip arrow placement="bottom" title={areRequiredCoursesAllOpen?"Close All":"Open All"}>
+                                    <span style={{cursor:"pointer", display:"inline", padding:"0 5px"}}>
+                                        {
+                                            areRequiredCoursesAllOpen?
+                                            <BsArrowsCollapse style={{width:"20px", height:"20px"}} onClick={()=>setRequiredCoursesAllOpen(!areRequiredCoursesAllOpen)}/>:
+                                            <BsArrowsExpand style={{width:"20px", height:"20px"}} onClick={()=>setRequiredCoursesAllOpen(!areRequiredCoursesAllOpen)}/>
+                                        }
+                                    </span>
+                                </Tooltip>
+                                Required Courses</h3>
                             <hr/>
                             {primaryBucket}
                         </div>
@@ -236,26 +291,28 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
                             display:"flex", 
                             justifyContent: "start", 
                             flexWrap:"wrap", 
-                            alignItems: "center",
-                            padding:"5px"
+                            alignContent:'flex-start',
+                            padding:"5px",
+                            width:"100%"
                         }}>
-                            <h3 style={{width:"100%", paddingLeft:"10px"}}>
+                            <h3 style={{width:"100%"}}>
+                                <Tooltip arrow placement="bottom" title={arePlanAllOpen?"Close All":"Open All"}>
+                                    <span style={{cursor:"pointer", display:"inline", padding:"0 5px"}}>
+                                        {
+                                            arePlanAllOpen?
+                                            <BsArrowsCollapse style={{width:"20px", height:"20px", margin:"2px"}} onClick={()=>setPlanAllOpen(!arePlanAllOpen)}/>:
+                                            <BsArrowsExpand style={{width:"20px", height:"20px", margin:"2px"}} onClick={()=>setPlanAllOpen(!arePlanAllOpen)}/>
+                                        }
+                                    </span>
+                                </Tooltip>
                                 Your Plan
                                 <div style={{float:"right", margin:"auto 0"}}>
-                                    <a title={areAllOpen?"Close All":"Open All"}>
-                                        {
-                                            areAllOpen?
-                                            <BsList style={{width:"20px", height:"20px", margin:"2px"}} onClick={()=>setAllOpen(!areAllOpen)}/>:
-                                            <BsListNested style={{width:"20px", height:"20px", margin:"2px"}} onClick={()=>setAllOpen(!areAllOpen)} title="Open All"/>
-                                        }
-                                    </a>
                                     <BsGearFill style={{width:"20px", height:"20px", margin:"2px"}}/>
                                 </div>
                             </h3>
                             <hr/>
                             {otherBuckets}
                         </div>
-                    
                 </div>
             </DragDropContext>
             <InfoModal 
@@ -268,30 +325,43 @@ export default function ClassBuckets({API, setSelected, openClassModal}){
     )
 }
 
-function BucketSearchColumn({bucketItems, missing, onClassClick, populatedBuckets}){
-    const [search, setSearch] = React.useState("")
+function BucketSearchColumn({bucketItems, missing, onClassClick, populatedBuckets, collapseOpen}){
+    const [search, setSearch] = React.useState("");
 
-    const bucketComponents = React.useMemo(()=>
-        bucketItems.map(({bucket, items})=>
+    let filtered = React.useMemo(()=>
+        bucketItems.map(({bucket, items})=>{
+            return {
+                bucket, 
+                items: items.filter(
+                                    e=>!search || 
+                                    e.label.toLowerCase().indexOf(search.toLowerCase())>-1 || 
+                                    bucket.label.toLowerCase().indexOf(search.toLowerCase())>-1
+                                )
+            }   
+        }
+    ), [search, bucketItems])
+
+    const bucketComponents = React.useMemo(()=>{
+        return filtered.map(({bucket, items})=>
         {
-            let filtered = items.filter(e=>!search || e.label.toLowerCase().indexOf(search.toLowerCase())>-1);
-            if(!filtered.length && search){
+            if(!items.length && search){
                 return <></>
             }
             return (
                 <>
-                    <BucketItem bucket={{...bucket, label:bucket.label.substring(bucket.label.indexOf(PRIMARY_BUCKET)+PRIMARY_BUCKET.length +1)}} 
-                        items={filtered}
+                    <BucketItem bucket={{...bucket, label:bucket.label.substring(bucket.label.indexOf(PRIMARY_BUCKET)+PRIMARY_BUCKET.length)}} 
+                        items={items}
                         missing={missing}
                         bucketMessage={search?"No classes match that search.":"No classes left to plan!"}
                         populatedBuckets={populatedBuckets}
+                        searchText={search}
+                        collapseOpen={collapseOpen}
                         onClassClick={onClassClick}/>
                         <hr/>
                 </>
             )
         }
-        )
-    , [bucketItems, missing, onClassClick, populatedBuckets, search])
+    )}, [filtered, missing, onClassClick, populatedBuckets, search, collapseOpen]);
 
     return (
         <>
@@ -305,21 +375,23 @@ function BucketSearchColumn({bucketItems, missing, onClassClick, populatedBucket
                 />
             </div>
             <hr/>
-            {bucketComponents}
+            <div style={scrollStyle}>
+                {bucketComponents}
+            </div>
         </>
     )
 }
 
-function BucketItem({bucket,items, missing, onClassClick, populatedBuckets, collapseOpen, bucketMessage}){
+function BucketItem({bucket,items, missing, onClassClick, populatedBuckets, collapseOpen, bucketMessage, searchText}){
     const [isCollapseOpen, setCollapseOpen] = React.useState(true);
 
     React.useEffect(()=>{
-        setCollapseOpen(collapseOpen)
+        if(items.length===0){
+            setCollapseOpen(false)
+        }else{
+            setCollapseOpen(collapseOpen)
+        }
     }, [collapseOpen])
-
-    React.useEffect(()=>{
-        setCollapseOpen(true)
-    }, [items])
 
     const getStyle = (isDraggingOver) => ({
         textAlign:'left',
@@ -336,17 +408,28 @@ function BucketItem({bucket,items, missing, onClassClick, populatedBuckets, coll
                     ref={provided.innerRef}
                     style={getStyle(snapshot.isDraggingOver)}
                     {...provided.droppableProps}
-                >
+                >                    
                     <h5 style={{'marginBlockStart':'.3em', 'marginInlineStart':'.3em', marginBlockEnd:".3em", marginInlineEnd:".3em"}}>{
                         isCollapseOpen?
-                        <BiCaretDown onClick={(e)=>setCollapseOpen(!isCollapseOpen)} style={{margin:"auto 0", padding:"0px 1%"}}/>:
+                        <BiCaretDown onClick={()=>setCollapseOpen(!isCollapseOpen)} style={{margin:"auto 0", padding:"0px 1%"}}/>:
                         <BiCaretRight onClick={()=>setCollapseOpen(!isCollapseOpen)} style={{margin:"auto 0", padding:"0px 1%"}}/>
-                    }{bucket.label}</h5>
+                    }
+                        <Highlight search={searchText||""}>
+                            {bucket.label}
+                        </Highlight>
+                        {
+                            !items.length&&bucketMessage?
+                            <div style={{float:"right", margin:"auto 0"}}>
+                                <BsCheck style={{margin:"2px", color:"green"}}/>
+                            </div>:
+                            <></>
+                        }
+                    </h5>
                     <Collapse isOpened={isCollapseOpen||snapshot.isDraggingOver}>
-                        <div style={{marginLeft:"25px", maxHeight:"80vh", overflowY:"auto", paddingRight:"3px"}}>
+                        <div style={{marginLeft:"25px", paddingRight:"3px"}}>
                         {
                             items.length||snapshot.isDraggingOver?
-                            <ClassList items={items} missing={missing} onClassClick={onClassClick} populatedBuckets={populatedBuckets}/>:
+                            <ClassList items={items} missing={missing} onClassClick={onClassClick} populatedBuckets={populatedBuckets} searchText={searchText}/>:
                             <p>{bucketMessage||"Add some classes to this semester!"}</p>
                         }
                         </div>
@@ -358,13 +441,13 @@ function BucketItem({bucket,items, missing, onClassClick, populatedBuckets, coll
     )
 }
 
-const ClassList = React.memo(function ClassList({items, missing, onClassClick, populatedBuckets}){
+const ClassList = React.memo(function ClassList({items, missing, onClassClick, populatedBuckets, searchText}){
     return items.map((item,index)=>
-        <ClassItem item={item} index={index} key={item.id} isMissing={missing.some(e=>e.id===item.id)} onClassClick={onClassClick} populatedBuckets={populatedBuckets}/>
+        <ClassItem item={item} index={index} key={item.id} isMissing={missing.some(e=>e.id===item.id)} onClassClick={onClassClick} populatedBuckets={populatedBuckets} searchText={searchText}/>
     )
 })
 
-function ClassItem({item, index, isMissing, onClassClick, populatedBuckets}){
+function ClassItem({item, index, isMissing, onClassClick, populatedBuckets, searchText}){
     const getStyle= (isDragging, draggableStyle, missing, isValid) => ({
         // some basic styles to make the items look a bit nicer
         userSelect: 'none',
@@ -374,7 +457,7 @@ function ClassItem({item, index, isMissing, onClassClick, populatedBuckets}){
         textAlign:"left",
         padding:"10px",
         // change background colour if dragging
-        border: `1px solid ${isDragging ? '#82d6e0' : (missing?'darkred':(isValid?'green':'#bbb'))}`,
+        border: `1px solid ${missing?'#8B0015':(isValid?'green':'#1E5288')}`,
         color:missing?'darkred':(isValid?'green':'black'),
         // styles we need to apply on draggables
         ...draggableStyle
@@ -387,26 +470,35 @@ function ClassItem({item, index, isMissing, onClassClick, populatedBuckets}){
     return (
         <Draggable key={item.id} draggableId={item.id} index={index} isDragDisabled={isMissing}>
             {(provided, snapshot) => (
-                <div
-                    ref={provided.innerRef}
-                    {...provided.draggableProps}
-                    {...provided.dragHandleProps}
-                    style={getStyle(
-                        snapshot.isDragging,
-                        provided.draggableProps.style,
-                        isMissing,
-                        isValid
-                    )}
-                    onClick={()=>onClassClick(item.id)}
-                    title={isMissing?"This class is missing requirements.":(isValid?"This class can be added to your plan.":null)}
-                >
-                    <span>
-                        {item.label}
-                    </span>
-                    {isMissing?<BiError style={{float:"right"}}/>:<></>}
-                    <br/>
-                    {item.children.length?<span>Requires {item.children.map(e=>e.label).join(",")}</span>:""}
-                </div>
+                <Tooltip id={`tooltip-${item.id}`} arrow placement="top" title={
+                    isMissing?
+                    "This class is missing requirements. Click for more information.":(
+                        isValid?
+                        "This class can be added to your plan. Click for more information.":
+                        "Click for more information."
+                    )
+                }>
+                    
+                    <div
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        {...provided.dragHandleProps}
+                        style={getStyle(
+                            snapshot.isDragging,
+                            provided.draggableProps.style,
+                            isMissing,
+                            isValid
+                        )}
+                        onClick={()=>onClassClick(item.id)}
+                    >
+                        <Highlight search={searchText||""}>
+                            {item.label}
+                        </Highlight>
+                        {isMissing?<BiError style={{float:"right"}}/>:<></>}
+                        <br/>
+                        {item.children.length?<span>Requires {item.children.map(e=>e.label).join(",")}</span>:""}
+                    </div>
+                </Tooltip>
             )}
         </Draggable>
     )
