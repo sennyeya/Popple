@@ -18,3 +18,13 @@ hr {
     border-top: 1px solid #aaaaaa;
     border-bottom: 1px solid #ffffff;
  }
+
+.className{
+    font-size:14px
+}
+
+.classRequirements{
+    box-decoration-break: clone;
+    font-size:12px;
+    margin-left:10px;
+}

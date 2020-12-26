@@ -102,7 +102,8 @@ router.post('/plan/add', async (req, res)=>{
  * Get the student's plan graph.
  */
 router.get('/plan/tree', async (req, res)=>{
-    const plan = await PlanController.retrievePlanGraph(req.student);
+    //const plan = await PlanController.retrievePlanGraph(req.student);
+    const plan = await PlanController.getRequirementGraph(req.student);
     res.json({tree:plan});
 })
 
@@ -112,7 +113,7 @@ router.get('/plan/tree', async (req, res)=>{
  router.get('/bucket/items', async function(req, res){
     const buckets = await PlanController.retrieveBucketItems(req.student);
     res.json(buckets.map(e=>{
-        return {id:e.id, label:e.name, bucket:e.bucket.id, children:e.children.map(e=>e._id), originalBucket:e.originalBucket}
+        return {id:e.id, label:e.name, bucket:e.bucket.id, children:e.children, originalBucket:e.originalBucket}
     }));
 })
 

@@ -210,6 +210,7 @@ export default function ClassBuckets({API, setSelected, openClassModal, setGraph
     }, [nodes, missingClasses, buckets])
 
     const bucketItems = React.useMemo(()=>{
+        console.log(nodes.map(e=>e.children).filter(e=>e.length))
         return buckets.map(bucket=>{
             return {
                 items: nodes.filter(node=>node.bucket===bucket.id).map(e=>{
@@ -442,6 +443,7 @@ function BucketItem({bucket,items, missing, onClassClick, populatedBuckets, coll
 }
 
 const ClassList = React.memo(function ClassList({items, missing, onClassClick, populatedBuckets, searchText}){
+    console.log(items)
     return items.map((item,index)=>
         <ClassItem item={item} index={index} key={item.id} isMissing={missing.some(e=>e.id===item.id)} onClassClick={onClassClick} populatedBuckets={populatedBuckets} searchText={searchText}/>
     )
@@ -491,12 +493,12 @@ function ClassItem({item, index, isMissing, onClassClick, populatedBuckets, sear
                         )}
                         onClick={()=>onClassClick(item.id)}
                     >
-                        <Highlight search={searchText||""}>
+                        <Highlight search={searchText||""} className={style.className}>
                             {item.label}
                         </Highlight>
                         {isMissing?<BiError style={{float:"right"}}/>:<></>}
                         <br/>
-                        {item.children.length?<span>Requires {item.children.map(e=>e.label).join(",")}</span>:""}
+                        {item.children.length?<span className={style.classRequirements}>Requires {item.children.map(e=>e.label).join(",")}</span>:""}
                     </div>
                 </Tooltip>
             )}

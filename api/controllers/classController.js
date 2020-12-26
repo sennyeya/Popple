@@ -100,11 +100,4 @@ module.exports = {
         }
         return options.filter(e=>retVal.includes(e.classTo.id));
     },
-
-    flags:[
-        "TIER 1 ARTS",
-        "TIER 1 SCIENCE",
-        "TIER 2 ARTS",
-        "TIER 2 SCIENCE"
-    ],
 }
