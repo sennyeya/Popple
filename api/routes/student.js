@@ -113,7 +113,14 @@ router.get('/plan/tree', async (req, res)=>{
  router.get('/bucket/items', async function(req, res){
     const buckets = await PlanController.retrieveBucketItems(req.student);
     res.json(buckets.map(e=>{
-        return {id:e.id, label:e.name, bucket:e.bucket.id, children:e.children, originalBucket:e.originalBucket}
+        return {
+            id:e.id, 
+            classId:e.classItem.id, 
+            label:e.classItem.name, 
+            bucket:e.currentBucket, 
+            children:e.children, 
+            originalBucket:e.originalBucket
+        }
     }));
 })
 
@@ -135,10 +142,18 @@ router.post('/bucket/move', async function(req, res){
 })
 
 /**
- * Move an item to a new bucket.
+ * Get a bucket item's info.
  */
 router.get('/bucket/itemInfo', async function(req, res){
     res.json(await PlanController.getBucketItemInfo(req.query.id))
+})
+
+/**
+ * Get a class item's info.
+ */
+router.get('/class/itemInfo', async function(req, res){
+    let node = await ClassController.getItem(req.query.id)
+    res.json({name:node.name, credits:node.credits, planProgress:0, graduationProgress:0})
 })
 
 module.exports = router;

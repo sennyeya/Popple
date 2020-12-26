@@ -53,7 +53,6 @@ function GraphItem({API, graphNodes, setSelected, openClassModal}){
 
     React.useEffect(()=>{
         API.get("/student/plan/tree").then(({tree}) => {
-            console.log(tree)
             setData(tree);
             setLoading(false);
         })
@@ -69,7 +68,7 @@ function GraphItem({API, graphNodes, setSelected, openClassModal}){
             return [];
         }
         for(let node of graphNodes){
-            let mappedNode = data.nodes.filter(e=>e.id===node.id)[0]
+            let mappedNode = data.nodes.filter(e=>e.id===node.classId)[0]
             if(node.isValid){
                 mappedNode.type="validNode"
             }else if(node.isMissing){
