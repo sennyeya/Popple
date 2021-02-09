@@ -89,7 +89,16 @@ export default function ClassBuckets({API, setSelected, openClassModal, setGraph
     }
 
     const getModalRequirementMessage = (currentNode, dependents) => {
-        return `Class ${currentNode.label} has the following dependendents in other semesters: \n\t${dependents.map(e=>e.label).join(", ")}. Those classes have been removed from your plan.`
+        return (<div>
+            <p>Class {currentNode.label} has the following dependendencies in later semesters: </p>
+            <ul>
+                {dependents.map(e=>{
+                    return <li>{e.label}</li>
+                })}
+            </ul> 
+            <p>Those classes have been removed from your plan.</p>
+        </div>
+        )
     }
 
     const getClassesWithMissingDependencies = (nodes, futureNodes) =>{
@@ -108,8 +117,15 @@ export default function ClassBuckets({API, setSelected, openClassModal, setGraph
 
     const getModalMissingMessage = (currentNode, filteredArr) => {
         let missing = missingClasses.filter(e=>currentNode.children.some(f=>f.classId===e.classId));
-        return `Class ${currentNode.label} is missing the following prerequisite(s): \n\t${missing.map(e=>e.label).join(", ")}. 
-                    Those prerequisites have been highlighted in red in your Required Courses. For more information on prerequisites, look at the Degree Path diagram.`
+        return (<div>
+            <p>Class {currentNode.label} is missing the following prerequisite(s):</p>
+            <ul>
+                {missing.map(e=>{
+                    return <li>{e.label}</li>
+                })}
+            </ul>
+        </div>
+        )
     }
 
     const onDragEnd = ({ source, destination }) => {
@@ -323,9 +339,9 @@ export default function ClassBuckets({API, setSelected, openClassModal, setGraph
             <InfoModal 
                     title={"Alert"}
                     isOpen={isModalOpen} 
-                    closeModal={()=>setModalOpen(false)}
-                    message={modalMessage}
-                />
+                    closeModal={()=>setModalOpen(false)}>
+                {modalMessage}
+            </InfoModal>
         </>
     )
 }
@@ -390,17 +406,17 @@ function BucketSearchColumn({bucketItems, missing, onClassClick, populatedBucket
 function BucketItem({bucket,items, missing, onClassClick, populatedBuckets, collapseOpen, bucketMessage, searchText}){
     const [isCollapseOpen, setCollapseOpen] = React.useState(true);
 
+    const isCompletable = React.useMemo(()=>{
+        return missing&&bucketMessage?items.some(e=>!missing.some(f=>e.classId===f.classId)):true
+    }, [missing, items, bucketMessage])
+
     React.useEffect(()=>{
-        if(items.length===0){
+        if(items.length===0||!isCompletable){
             setCollapseOpen(false)
         }else{
             setCollapseOpen(collapseOpen)
         }
-    }, [collapseOpen, items])
-
-    const isCompletable = React.useMemo(()=>{
-        return missing&&bucketMessage?items.some(e=>!missing.some(f=>e.classId===f.classId)):true
-    }, [missing, items, bucketMessage])
+    }, [collapseOpen, items, isCompletable])
 
     const getStyle = (isDraggingOver) => ({
         textAlign:'left',
@@ -410,6 +426,7 @@ function BucketItem({bucket,items, missing, onClassClick, populatedBuckets, coll
         display:"block",
         flexBasis: "100%"
     });
+
     return (
         <Droppable droppableId={bucket.id} key={bucket.id}>
             {(provided, snapshot)=>
@@ -428,35 +445,40 @@ function BucketItem({bucket,items, missing, onClassClick, populatedBuckets, coll
                             <Highlight search={searchText||""}>
                                 {bucket.label}
                             </Highlight>
+                            {items.length&&!bucketMessage?<>({items.reduce((total, e)=>total+(+e.credits || 0), 0)})</>:<></>}
                             {
                                 !items.length&&bucketMessage?
-                                <div style={{margin:"auto 0"}}>
-                                    <BsCheck style={{margin:"2px", color:"green"}}/>
-                                </div>:
+                                <Tooltip id={`tooltip-bucket-${bucket.id}`} arrow placement="top" title={"All classes for this group have been completed."}>
+                                    <div style={{margin:"auto 0"}}>
+                                        <BsCheck style={{color:"green"}}/>
+                                    </div>
+                                </Tooltip>:
                                 <>
                                 {
                                     isCompletable?
                                     <></>:
-                                    <div style={{margin:"auto 0"}}>
-                                        <BiError style={{margin:"2px", color:"darkred"}}/>
-                                    </div>
+                                    <Tooltip id={`tooltip-bucket-${bucket.id}`} arrow placement="top" title={"No classes from this group can be taken currently."}>
+                                        <div style={{margin:"auto 0"}}>
+                                            <BiError style={{ color:"darkred"}}/>
+                                        </div>
+                                    </Tooltip>
                                 }
                                 </>
                             }
                         </h5>
                     </div>
-                    <Collapse isOpened={isCollapseOpen||snapshot.isDraggingOver}>
+                    <Collapse isOpened={isCollapseOpen||snapshot.isDraggingOver} initialStyle={{height: '0px', overflow: 'hidden'}}>
                         <div style={{marginLeft:"25px", paddingRight:"3px"}}>
                         {
                             items.length||snapshot.isDraggingOver?
                             <>
-                                <ClassList items={items} missing={missing} onClassClick={onClassClick} populatedBuckets={populatedBuckets} searchText={searchText}/>:
+                                <ClassList items={items} missing={missing} onClassClick={onClassClick} populatedBuckets={populatedBuckets} searchText={searchText}/>
                             </>:
                             <p>{bucketMessage||"Add some classes to this semester!"}</p>
                         }
+                        {provided.placeholder}
                         </div>
                     </Collapse>
-                    {provided.placeholder}
                 </div>
             }
         </Droppable>

@@ -2,7 +2,7 @@ var express = require('express')
 
 var {Student} = require('../schema/student');
 var PlanController = require('../controllers/planController');
-const classController = require('../controllers/classController');
+const ClassController = require('../controllers/classController');
 
 var router = express.Router();
 
@@ -78,11 +78,11 @@ const outsideCurrentSemester = (lastSurveyDate) =>{
  * Ensure the student has answered the plan and class surveys.
  */
 router.use(async (req, res, next)=>{
-    if(outsideCurrentSemester(req.student.lastAnsweredPlanSurvey)){
-        return res.json({error:"NO_VALID_PLAN_SURVEY",message:"This student has not answered a plan survey yet."})
+    //if(outsideCurrentSemester(req.student.lastAnsweredPlanSurvey)){
+    //    return res.json({error:"NO_VALID_PLAN_SURVEY",message:"This student has not answered a plan survey yet."})
     //}else if(outsideCurrentSemester(req.student.lastAnsweredClassSurvey)){
     //    return res.json({error:"NO_VALID_CLASS_SURVEY",message:"This student has not answered a class survey yet."})
-    }
+    //}
     next();
 })
 
@@ -119,7 +119,8 @@ router.get('/plan/tree', async (req, res)=>{
             label:e.classItem.name, 
             bucket:e.currentBucket, 
             children:e.children, 
-            originalBucket:e.originalBucket
+            originalBucket:e.originalBucket,
+            credits: e.classItem.credit
         }
     }));
 })
