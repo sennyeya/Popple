@@ -195,7 +195,7 @@ export default function ClassBuckets({API, setSelected, openClassModal, setGraph
                 setNodes(json)
                 API.get("/student/bucket/buckets").then(json=>{
                         setBuckets(json.map((e,index)=>{
-                            return {id:e.id, label:e.label, index}
+                            return {...e, index}
                         }))
                         setLoading(false)
                 })
@@ -437,13 +437,24 @@ function BucketItem({bucket,items, missing, onClassClick, populatedBuckets, coll
         return missing&&bucketMessage?items.some(e=>!missing.some(f=>e.classId===f.classId)):true
     }, [missing, items, bucketMessage])
 
+    const isFulfilled = React.useMemo(()=>{
+        if(!bucket.minimumClasses){
+            return false;
+        }
+        return populatedBuckets && populatedBuckets.filter(e=>e.originalBucket===bucket.id&&e.bucket!==bucket.id).length>=+bucket.minimumClasses
+    }, [bucket, populatedBuckets])
+
+    const isPrimary = React.useMemo(()=>{
+        return !items.length&&bucketMessage
+    }, [bucketMessage, items])
+
     React.useEffect(()=>{
-        if(items.length===0||!isCompletable){
+        if(items.length===0||!isCompletable||isFulfilled){
             setCollapseOpen(false)
         }else{
             setCollapseOpen(collapseOpen)
         }
-    }, [collapseOpen, items, isCompletable])
+    }, [collapseOpen, items, isCompletable, isFulfilled])
 
     const getStyle = (isDraggingOver) => ({
         textAlign:'left',
@@ -461,14 +472,14 @@ function BucketItem({bucket,items, missing, onClassClick, populatedBuckets, coll
                     ref={provided.innerRef}
                     style={getStyle(snapshot.isDraggingOver)}
                     {...provided.droppableProps}
-                >          
+                >
                     <div style={{display:"inline-flex", justifyContent:"flex-start", width:"100%"}}>        
                         {
                             isCollapseOpen?
                             <BiCaretDown onClick={()=>setCollapseOpen(!isCollapseOpen)} style={{margin:"auto 0", padding:"0px 2px", width:"20px"}}/>:
                             <BiCaretRight onClick={()=>setCollapseOpen(!isCollapseOpen)} style={{margin:"auto 0", padding:"0px 2px", width:"20px"}}/>
                         }  
-                        <h5 style={{display:"flex", width:"100%",justifyContent:((!items.length&&bucketMessage)||!isCompletable)?"space-between":"flex-start"}}>
+                        <h5 style={{display:"flex", width:"100%",justifyContent:(isPrimary||isFulfilled||!isCompletable)?"space-between":"flex-start"}}>
                             <Highlight search={searchText||""}  matchStyle={{padding:"0 0.1em", height: "1.15em", lineHeight: 1.15}}>
                                 {bucket.label}
                             </Highlight>
@@ -478,6 +489,12 @@ function BucketItem({bucket,items, missing, onClassClick, populatedBuckets, coll
                                 <Tooltip id={`tooltip-bucket-${bucket.id}`} arrow placement="top" title={"All classes for this group have been completed."}>
                                     <div style={{margin:"auto 0"}}>
                                         <BsCheck style={{color:"green"}}/>
+                                    </div>
+                                </Tooltip>:
+                                (isFulfilled?
+                                <Tooltip id={`tooltip-bucket-${bucket.id}`} arrow placement="top" title={"Required number classes for this group have been added."}>
+                                    <div style={{margin:"auto 0"}}>
+                                        <BsCheck style={{color:"#440381"}}/>
                                     </div>
                                 </Tooltip>:
                                 <>
@@ -490,11 +507,11 @@ function BucketItem({bucket,items, missing, onClassClick, populatedBuckets, coll
                                         </div>
                                     </Tooltip>
                                 }
-                                </>
+                                </>)
                             }
                         </h5>
                     </div>
-                    <Collapse isOpened={isCollapseOpen||snapshot.isDraggingOver} initialStyle={{height: '0px', overflow: 'hidden'}}>
+                    <Collapse isOpened={isCollapseOpen||snapshot.isDraggingOver||searchText} initialStyle={{height: '0px', overflow: 'hidden'}}>
                         <div style={{marginLeft:"25px", paddingRight:"3px"}}>
                         {
                             items.length||snapshot.isDraggingOver?
