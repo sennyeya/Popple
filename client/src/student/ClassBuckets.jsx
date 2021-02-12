@@ -9,6 +9,11 @@ import style from './ClassBuckets.module.css';
 import {Form} from 'react-bootstrap';
 import Tooltip from '@material-ui/core/Tooltip';
 import Highlight from 'react-highlighter';
+import { makeStyles } from '@material-ui/core/styles';
+import Paper from '@material-ui/core/Paper';
+import InputBase from '@material-ui/core/InputBase';
+import IconButton from '@material-ui/core/IconButton';
+import SearchIcon from '@material-ui/icons/Search';
 
 const PRIMARY_BUCKET = "req-group:";
 const grid = 8;
@@ -72,16 +77,16 @@ export default function ClassBuckets({API, setSelected, openClassModal, setGraph
 
     const getDependents = (node, arr) =>{
         let oldArr = [...arr]
-        let depIds = [node.id.trim()]
+        let depIds = [node.classId]
         let retVal = []
         while(arr.length){
             let curr = arr.pop();
-            if(depIds.some(e=>e===curr.id.trim())){
+            if(depIds.some(e=>e===curr.classId)){
                 continue;
             }
-            if(curr.children.some(e=>depIds.indexOf(e.trim())>-1)){
+            if(curr.children.some(e=>depIds.indexOf(e)>-1)){
                 retVal.push(curr)
-                depIds.push(curr.id);
+                depIds.push(curr.classId);
                 arr = [...oldArr];
             }
         }
@@ -89,13 +94,22 @@ export default function ClassBuckets({API, setSelected, openClassModal, setGraph
     }
 
     const getModalRequirementMessage = (currentNode, dependents) => {
-        return `Class ${currentNode.label} has the following dependendents in other semesters: \n\t${dependents.map(e=>e.label).join(", ")}. Those classes have been removed from your plan.`
+        return (<div>
+            <p>Class {currentNode.label} has the following dependendencies in later semesters: </p>
+            <ul>
+                {dependents.map(e=>{
+                    return <li>{e.label}</li>
+                })}
+            </ul> 
+            <p>Those classes have been removed from your plan.</p>
+        </div>
+        )
     }
 
     const getClassesWithMissingDependencies = (nodes, futureNodes) =>{
         let retVal = [];
         for(let elem of nodes){
-            if(!elem.children.every(e=>futureNodes.some(f=>f.id===e))){
+            if(!elem.children.every(e=>futureNodes.some(f=>f.classId===e))){
                 retVal.push(elem)
             }
         }
@@ -103,13 +117,20 @@ export default function ClassBuckets({API, setSelected, openClassModal, setGraph
     }
 
     const isDropEnabled = (currentNode, filteredArr)=>{
-        return currentNode.children.length?currentNode.children.every(e=>filteredArr.some(f=>f.id===e)):true;
+        return currentNode.children.length?currentNode.children.every(e=>filteredArr.some(f=>f.classId===e)):true;
     }
 
     const getModalMissingMessage = (currentNode, filteredArr) => {
-        let missing = missingClasses.filter(e=>currentNode.children.some(f=>f.id===e.id));
-        return `Class ${currentNode.label} is missing the following prerequisite(s): \n\t${missing.map(e=>e.label).join(", ")}. 
-                    Those prerequisites have been highlighted in red in your Required Courses. For more information on prerequisites, look at the Degree Path diagram.`
+        let missing = missingClasses.filter(e=>currentNode.children.some(f=>f.classId===e.classId));
+        return (<div>
+            <p>Class {currentNode.label} is missing the following prerequisite(s):</p>
+            <ul>
+                {missing.map(e=>{
+                    return <li>{e.label}</li>
+                })}
+            </ul>
+        </div>
+        )
     }
 
     const onDragEnd = ({ source, destination }) => {
@@ -131,11 +152,13 @@ export default function ClassBuckets({API, setSelected, openClassModal, setGraph
             setModalMessage(getModalRequirementMessage(currentNode, dependents))
             setModalOpen(true)
             removeDependents(dependents);
-        }else if(isPrimary(currentBucket)&&currentBucket.id!==currentNode.originalBucket){
+        }
+        if(isPrimary(currentBucket)&&currentBucket.id!==currentNode.originalBucket){
             setModalMessage("This class belongs to another requirement group. Moving it there now.")
             setModalOpen(true);
             destination.droppableId = currentNode.originalBucket
-        }else if(!isPrimary(currentBucket) && !isDropEnabled(currentNode, filteredArr)){
+        }
+        if(!isPrimary(currentBucket) && !isDropEnabled(currentNode, filteredArr)){
             setModalMessage(getModalMissingMessage(currentNode, filteredArr))
             setModalOpen(true);
             destination.droppableId = currentNode.originalBucket
@@ -172,7 +195,7 @@ export default function ClassBuckets({API, setSelected, openClassModal, setGraph
                 setNodes(json)
                 API.get("/student/bucket/buckets").then(json=>{
                         setBuckets(json.map((e,index)=>{
-                            return {id:e.id, label:e.label, index}
+                            return {...e, index}
                         }))
                         setLoading(false)
                 })
@@ -198,12 +221,15 @@ export default function ClassBuckets({API, setSelected, openClassModal, setGraph
         }
         let nodesArr = [...nodes];
         for(let node of nodesArr){
-            if(missingClasses.some(e=>e.id===node.id)){
+            if(missingClasses.some(e=>e.classId===node.classId)){
                 node.isMissing = true;
                 node.isValid = false;
             }else if(isPrimary(buckets.filter(e=>e.id===node.bucket)[0])){
                 node.isMissing = false;
                 node.isValid = true;
+            }else{
+                node.isMissing = false;
+                node.isValid = false;
             }
         }
         setGraphNodes(nodesArr)
@@ -215,7 +241,7 @@ export default function ClassBuckets({API, setSelected, openClassModal, setGraph
                 items: nodes.filter(node=>node.bucket===bucket.id).map(e=>{
                     return {
                         ...e, 
-                        children:e.children.map(c=>nodes.filter(f=>f.id===c)[0])
+                        children:e.children.map(c=>nodes.filter(f=>f.classId===c)[0])
                     }}
                 ),
                 bucket: bucket
@@ -318,15 +344,33 @@ export default function ClassBuckets({API, setSelected, openClassModal, setGraph
             <InfoModal 
                     title={"Alert"}
                     isOpen={isModalOpen} 
-                    closeModal={()=>setModalOpen(false)}
-                    message={modalMessage}
-                />
+                    closeModal={()=>setModalOpen(false)}>
+                {modalMessage}
+            </InfoModal>
         </>
     )
 }
 
+const useStyles = makeStyles((theme) => ({
+    root: {
+      padding: '2px 4px',
+      display: 'flex',
+      alignItems: 'center',
+      height:'40px'
+    },
+    input: {
+      marginLeft: theme.spacing(1),
+      flex: 1,
+    },
+    iconButton: {
+      padding: 5,
+    }
+  }));
+
 function BucketSearchColumn({bucketItems, missing, onClassClick, populatedBuckets, collapseOpen}){
     const [search, setSearch] = React.useState("");
+
+    const classes = useStyles();
 
     let filtered = React.useMemo(()=>
         bucketItems.map(({bucket, items})=>{
@@ -366,13 +410,17 @@ function BucketSearchColumn({bucketItems, missing, onClassClick, populatedBucket
     return (
         <>
             <div style={{padding:"5px", width:"90%", margin:"0 auto"}}>
-                <Form.Control
-                    type="text"
-                    placeholder="Search"
-                    name="search"
-                    value={search}
-                    onChange={e=>setSearch(e.target.value)}
-                />
+                <Paper component="form" className={classes.root}>
+                    <InputBase
+                        className={classes.input}
+                        onChange={e=>setSearch(e.target.value)}
+                        placeholder="Filter Classes"
+                        inputProps={{ 'aria-label': 'filter classes' }}
+                    />
+                    <IconButton className={classes.iconButton} aria-label="filter">
+                        <SearchIcon />
+                    </IconButton>
+                </Paper>
             </div>
             <hr/>
             <div style={scrollStyle}>
@@ -385,13 +433,28 @@ function BucketSearchColumn({bucketItems, missing, onClassClick, populatedBucket
 function BucketItem({bucket,items, missing, onClassClick, populatedBuckets, collapseOpen, bucketMessage, searchText}){
     const [isCollapseOpen, setCollapseOpen] = React.useState(true);
 
+    const isCompletable = React.useMemo(()=>{
+        return missing&&bucketMessage?items.some(e=>!missing.some(f=>e.classId===f.classId)):true
+    }, [missing, items, bucketMessage])
+
+    const isFulfilled = React.useMemo(()=>{
+        if(!bucket.minimumClasses){
+            return false;
+        }
+        return populatedBuckets && populatedBuckets.filter(e=>e.originalBucket===bucket.id&&e.bucket!==bucket.id).length>=+bucket.minimumClasses
+    }, [bucket, populatedBuckets])
+
+    const isPrimary = React.useMemo(()=>{
+        return !items.length&&bucketMessage
+    }, [bucketMessage, items])
+
     React.useEffect(()=>{
-        if(items.length===0){
+        if(items.length===0||!isCompletable||isFulfilled){
             setCollapseOpen(false)
         }else{
             setCollapseOpen(collapseOpen)
         }
-    }, [collapseOpen])
+    }, [collapseOpen, items, isCompletable, isFulfilled])
 
     const getStyle = (isDraggingOver) => ({
         textAlign:'left',
@@ -401,6 +464,7 @@ function BucketItem({bucket,items, missing, onClassClick, populatedBuckets, coll
         display:"block",
         flexBasis: "100%"
     });
+
     return (
         <Droppable droppableId={bucket.id} key={bucket.id}>
             {(provided, snapshot)=>
@@ -408,33 +472,57 @@ function BucketItem({bucket,items, missing, onClassClick, populatedBuckets, coll
                     ref={provided.innerRef}
                     style={getStyle(snapshot.isDraggingOver)}
                     {...provided.droppableProps}
-                >                    
-                    <h5 style={{'marginBlockStart':'.3em', 'marginInlineStart':'.3em', marginBlockEnd:".3em", marginInlineEnd:".3em"}}>{
-                        isCollapseOpen?
-                        <BiCaretDown onClick={()=>setCollapseOpen(!isCollapseOpen)} style={{margin:"auto 0", padding:"0px 1%"}}/>:
-                        <BiCaretRight onClick={()=>setCollapseOpen(!isCollapseOpen)} style={{margin:"auto 0", padding:"0px 1%"}}/>
-                    }
-                        <Highlight search={searchText||""}>
-                            {bucket.label}
-                        </Highlight>
+                >
+                    <div style={{display:"inline-flex", justifyContent:"flex-start", width:"100%"}}>        
                         {
-                            !items.length&&bucketMessage?
-                            <div style={{float:"right", margin:"auto 0"}}>
-                                <BsCheck style={{margin:"2px", color:"green"}}/>
-                            </div>:
-                            <></>
-                        }
-                    </h5>
-                    <Collapse isOpened={isCollapseOpen||snapshot.isDraggingOver}>
+                            isCollapseOpen?
+                            <BiCaretDown onClick={()=>setCollapseOpen(!isCollapseOpen)} style={{margin:"auto 0", padding:"0px 2px", width:"20px"}}/>:
+                            <BiCaretRight onClick={()=>setCollapseOpen(!isCollapseOpen)} style={{margin:"auto 0", padding:"0px 2px", width:"20px"}}/>
+                        }  
+                        <h5 style={{display:"flex", width:"100%",justifyContent:(isPrimary||isFulfilled||!isCompletable)?"space-between":"flex-start"}}>
+                            <Highlight search={searchText||""}  matchStyle={{padding:"0 0.1em", height: "1.15em", lineHeight: 1.15}}>
+                                {bucket.label}
+                            </Highlight>
+                            {items.length&&!bucketMessage?<>({items.reduce((total, e)=>total+(+e.credits || 0), 0)})</>:<></>}
+                            {
+                                !items.length&&bucketMessage?
+                                <Tooltip id={`tooltip-bucket-${bucket.id}`} arrow placement="top" title={"All classes for this group have been completed."}>
+                                    <div style={{margin:"auto 0"}}>
+                                        <BsCheck style={{color:"green"}}/>
+                                    </div>
+                                </Tooltip>:
+                                (isFulfilled?
+                                <Tooltip id={`tooltip-bucket-${bucket.id}`} arrow placement="top" title={"Required number classes for this group have been added."}>
+                                    <div style={{margin:"auto 0"}}>
+                                        <BsCheck style={{color:"#440381"}}/>
+                                    </div>
+                                </Tooltip>:
+                                <>
+                                {
+                                    isCompletable?
+                                    <></>:
+                                    <Tooltip id={`tooltip-bucket-${bucket.id}`} arrow placement="top" title={"No classes from this group can be taken currently."}>
+                                        <div style={{margin:"auto 0"}}>
+                                            <BiError style={{ color:"darkred"}}/>
+                                        </div>
+                                    </Tooltip>
+                                }
+                                </>)
+                            }
+                        </h5>
+                    </div>
+                    <Collapse isOpened={isCollapseOpen||snapshot.isDraggingOver||searchText} initialStyle={{height: '0px', overflow: 'hidden'}}>
                         <div style={{marginLeft:"25px", paddingRight:"3px"}}>
                         {
                             items.length||snapshot.isDraggingOver?
-                            <ClassList items={items} missing={missing} onClassClick={onClassClick} populatedBuckets={populatedBuckets} searchText={searchText}/>:
+                            <>
+                                <ClassList items={items} missing={missing} onClassClick={onClassClick} populatedBuckets={populatedBuckets} searchText={searchText}/>
+                            </>:
                             <p>{bucketMessage||"Add some classes to this semester!"}</p>
                         }
+                        {provided.placeholder}
                         </div>
                     </Collapse>
-                    {provided.placeholder}
                 </div>
             }
         </Droppable>
@@ -443,11 +531,11 @@ function BucketItem({bucket,items, missing, onClassClick, populatedBuckets, coll
 
 const ClassList = React.memo(function ClassList({items, missing, onClassClick, populatedBuckets, searchText}){
     return items.map((item,index)=>
-        <ClassItem item={item} index={index} key={item.id} isMissing={missing.some(e=>e.id===item.id)} onClassClick={onClassClick} populatedBuckets={populatedBuckets} searchText={searchText}/>
+        <ClassItem item={item} index={index} key={item.id} isMissing={missing.some(e=>e.id===item.id)} missing={missing} onClassClick={onClassClick} populatedBuckets={populatedBuckets} searchText={searchText}/>
     )
 })
 
-function ClassItem({item, index, isMissing, onClassClick, populatedBuckets, searchText}){
+function ClassItem({item, index, isMissing, onClassClick, populatedBuckets, searchText, missing}){
     const getStyle= (isDragging, draggableStyle, missing, isValid) => ({
         // some basic styles to make the items look a bit nicer
         userSelect: 'none',
@@ -489,14 +577,14 @@ function ClassItem({item, index, isMissing, onClassClick, populatedBuckets, sear
                             isMissing,
                             isValid
                         )}
-                        onClick={()=>onClassClick(item.id)}
+                        onClick={()=>onClassClick(item.classId)}
                     >
-                        <Highlight search={searchText||""}>
+                        <Highlight search={searchText||""} className={style.className} matchStyle={{padding:"0 0.1em", height: "1.15em", lineHeight: 1.15}}>
                             {item.label}
                         </Highlight>
                         {isMissing?<BiError style={{float:"right"}}/>:<></>}
                         <br/>
-                        {item.children.length?<span>Requires {item.children.map(e=>e.label).join(",")}</span>:""}
+                        {item.children.length&&isMissing?<span className={style.classRequirements}>Requires {item.children.map(e=>e.label).join(", ")}</span>:""}
                     </div>
                 </Tooltip>
             )}

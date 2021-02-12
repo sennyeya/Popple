@@ -19,7 +19,7 @@ export default function ClassDetails({id, closeModal, isOpen, API}){
         setLoading(true)
         setError("")
         setPaneDetails("")
-        API.get("/student/bucket/itemInfo", {id}).then(json=>{
+        API.get("/student/class/itemInfo", {id}).then(json=>{
             setPaneDetails(json)
             setLoading(false)
         }).catch(e=>{

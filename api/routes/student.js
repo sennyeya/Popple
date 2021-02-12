@@ -2,7 +2,7 @@ var express = require('express')
 
 var {Student} = require('../schema/student');
 var PlanController = require('../controllers/planController');
-const classController = require('../controllers/classController');
+const ClassController = require('../controllers/classController');
 
 var router = express.Router();
 
@@ -78,11 +78,11 @@ const outsideCurrentSemester = (lastSurveyDate) =>{
  * Ensure the student has answered the plan and class surveys.
  */
 router.use(async (req, res, next)=>{
-    if(outsideCurrentSemester(req.student.lastAnsweredPlanSurvey)){
-        return res.json({error:"NO_VALID_PLAN_SURVEY",message:"This student has not answered a plan survey yet."})
+    //if(outsideCurrentSemester(req.student.lastAnsweredPlanSurvey)){
+    //    return res.json({error:"NO_VALID_PLAN_SURVEY",message:"This student has not answered a plan survey yet."})
     //}else if(outsideCurrentSemester(req.student.lastAnsweredClassSurvey)){
     //    return res.json({error:"NO_VALID_CLASS_SURVEY",message:"This student has not answered a class survey yet."})
-    }
+    //}
     next();
 })
 
@@ -102,7 +102,8 @@ router.post('/plan/add', async (req, res)=>{
  * Get the student's plan graph.
  */
 router.get('/plan/tree', async (req, res)=>{
-    const plan = await PlanController.retrievePlanGraph(req.student);
+    //const plan = await PlanController.retrievePlanGraph(req.student);
+    const plan = await PlanController.getRequirementGraph(req.student);
     res.json({tree:plan});
 })
 
@@ -112,7 +113,15 @@ router.get('/plan/tree', async (req, res)=>{
  router.get('/bucket/items', async function(req, res){
     const buckets = await PlanController.retrieveBucketItems(req.student);
     res.json(buckets.map(e=>{
-        return {id:e.id, label:e.name, bucket:e.bucket.id, children:e.children.map(e=>e._id), originalBucket:e.originalBucket}
+        return {
+            id:e.id, 
+            classId:e.classItem.id, 
+            label:e.classItem.name, 
+            bucket:e.currentBucket, 
+            children:e.children, 
+            originalBucket:e.originalBucket,
+            credits: e.classItem.credit
+        }
     }));
 })
 
@@ -134,10 +143,18 @@ router.post('/bucket/move', async function(req, res){
 })
 
 /**
- * Move an item to a new bucket.
+ * Get a bucket item's info.
  */
 router.get('/bucket/itemInfo', async function(req, res){
     res.json(await PlanController.getBucketItemInfo(req.query.id))
+})
+
+/**
+ * Get a class item's info.
+ */
+router.get('/class/itemInfo', async function(req, res){
+    let node = await ClassController.getItem(req.query.id)
+    res.json({name:node.name, credits:node.credits, planProgress:0, graduationProgress:0})
 })
 
 module.exports = router;

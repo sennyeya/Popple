@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
 import {LoadingIndicator} from '../shared/Loading'
 import AsyncSelect from '../shared/AsyncSelect'
-import { Dialog, TextField, DialogActions, DialogTitle, DialogContent, FormControl } from '@material-ui/core';
+import { Dialog, TextField, DialogActions, DialogTitle, DialogContent, FormControl, InputLabel } from '@material-ui/core';
 import API from '../shared/API';
+import Modal from '../shared/Modal'
 
 function ClassItem(){
     const [selected, setSelected] = React.useState(null);
@@ -12,18 +13,14 @@ function ClassItem(){
         <div style={{margin:"10px"}}>
             <p>Edit an existing class or add a new one.</p>
             <AsyncSelect 
-                url={()=>{
-                    return API.get('/admin/classes')
-                }} 
+                url={'/admin/classes'}
                 label="Classes"
-                onClick={(e,val)=>{
-                    setSelected(val)
-                }}
+                setSelected={setSelected}
             />
             <button hidden={!selected?!selected:null} onClick={()=>setShowEdit(true)}>Edit</button>
             <button onClick={()=>setShowAdd(true)}>Add A New Class</button>
-            <AddClassModal open={showAdd} setOpen={setShowAdd}/>
-            <EditClassModal open={showEdit} setOpen={setShowEdit} item={selected}/>
+            {showAdd?<AddClassModal setOpen={setShowAdd}/>:<></>}
+            {showEdit?<EditClassModal setOpen={setShowEdit} item={selected}/>:<></>}
         </div>
     )
 }
@@ -32,7 +29,7 @@ function AddClassModal(props){
     const [name, setName] = React.useState("");
     const [credits, setCredits] = React.useState(0);
     const [selected, setSelected] = React.useState([]);
-    const {open, setOpen} = props;
+    const {setOpen} = props;
     const [loading, setLoading] = React.useState(false);
 
     const handleClose = ()=>{
@@ -52,39 +49,34 @@ function AddClassModal(props){
 
     return (
     <>
-        <Dialog open={open} onClose={handleClose}>
-            <DialogTitle id="alert-dialog-title">{"Add Class"}</DialogTitle>
-            <DialogContent>
+        <Modal 
+                isOpen 
+                onClose={handleClose} 
+                title="Add Class"
+                buttons={<>
+                    <button onClick={handleClose}>
+                        Cancel
+                    </button>
+                    <button onClick={submitForm} className="primary">
+                        Save
+                    </button>
+                </>}>
             {loading?<LoadingIndicator/>:
-            <form>
+            <>
                 <TextField label={"Name of Class"} required onChange={(e)=>{
                     setName(e.target.value)
                 }}/>
-                <AsyncSelect url={()=>{
-                                return API.get('/admin/classes')
-                            }}
-                            multi
-                            label="Required Classes"
-                            value={selected}
-                            onClick={(e,val)=>{
-                                setSelected(val)
-                            }}/>
-                <FormControl>
+                <AsyncSelect
+                    url={'/admin/classes'}
+                    isMulti
+                    label="Required Classes"
+                    value={selected}
+                    setSelected={setSelected}/>
                 <TextField label={"# of Credits"} required type={"number"} onChange={(e)=>{
                     setCredits(e.target.value)
                 }}/>
-                </FormControl>
-            </form>}
-            </DialogContent>
-            <DialogActions>
-            <button onClick={handleClose}>
-                Cancel
-            </button>
-            <button onClick={submitForm} className="primary">
-                Save
-            </button>
-            </DialogActions>
-        </Dialog>
+            </>}
+        </Modal>
     </>)
 }
 
@@ -92,7 +84,7 @@ function EditClassModal(props){
     const [name, setName] = React.useState("");
     const [credits, setCredits] = React.useState(0);
     const [selected, setSelected] = React.useState([]);
-    const {open, setOpen, item} = props;
+    const {setOpen, item} = props;
     const [loading, setLoading] = React.useState(false)
 
     useEffect(()=>{
@@ -132,41 +124,39 @@ function EditClassModal(props){
 
     return (
     <>
-        <Dialog open={open} onClose={handleClose}>
-            <DialogTitle id="alert-dialog-title">{"Edit Class"}</DialogTitle>
-            <DialogContent>
-                <form>
-                    <TextField label={"Name of Class"} required onChange={(e)=>{
-                        setName(e.target.value)
-                    }} defaultValue={item?item.label:""}/>
-                    <AsyncSelect url={()=>{
-                                    return API.get('/admin/classes')
-                                }} 
-                                multi
-                                label="Requirements"
-                                filter={(val)=>{
-                                    return val.value!==item.value
-                                }}
-                                value={selected}
-                                onClick={(e,val)=>{
-                                    setSelected(val)
-                                }}/>
-                    <FormControl>
-                    <TextField label={"# of Credits"} required type={"number"} onChange={(e)=>{
-                        setCredits(e.target.value)
-                    }} defaultValue={item?item.credits:''}/>
-                    </FormControl>
-                </form>
-            </DialogContent>
-            <DialogActions>
-                <button onClick={handleClose}>
-                    Cancel
-                </button>
-                <button onClick={submitForm} className="primary">
-                    Save
-                </button>
-            </DialogActions>
-        </Dialog>
+            <Modal 
+                isOpen 
+                onClose={handleClose} 
+                title="Edit Class"
+                buttons={<>
+                    <button onClick={handleClose}>
+                        Cancel
+                    </button>
+                    <button onClick={submitForm} className="primary">
+                        Save
+                    </button>
+                </>}>
+                {
+                    loading?
+                    <LoadingIndicator/>:
+                    <>
+                        <TextField label={"Name of Class"} required onChange={(e)=>{
+                            setName(e.target.value)
+                        }} defaultValue={item?item.label:""}/>
+                        <AsyncSelect url={'/admin/potentialRequirements'} 
+                                    isMulti
+                                    label="Requirements"
+                                    filter={(val)=>{
+                                        return val.value!==item.value
+                                    }}
+                                    value={selected}
+                                    setSelected={setSelected}/>
+                        <TextField label={"# of Credits"} required type={"number"} onChange={(e)=>{
+                            setCredits(e.target.value)
+                        }} defaultValue={item?item.credits:''}/>
+                    </>
+                }
+            </Modal>
     </>)
 }
 

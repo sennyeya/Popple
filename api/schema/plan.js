@@ -11,7 +11,7 @@ var planSchema = new Schema({
     minCredits: {type:Number, default:120},
     nodes:[{type:ObjectId, ref:'plannodes'}],
     requirements:[{type:ObjectId, ref:'requirements'}],
-    grouping:[{type:ObjectId, ref:'flags'}]
+    //grouping:[{type:ObjectId, ref:'flags'}]
 })
 
 module.exports.Plan = mongoose.model('plans', planSchema)

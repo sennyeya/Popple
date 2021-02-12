@@ -8,7 +8,6 @@ var {ObjectId, Date, String} = mongoose.Schema.Types;
 
 /**
  * Stores a user's semester plan. Each bucket should have a list of sub-buckets for each requirement on a plan. Think the collapseable panes on the UAccess advisement report.
- * TODO: Implement the requirement layer.
  */
 const bucketSchema = new Schema({
   name: String,
