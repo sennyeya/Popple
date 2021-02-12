@@ -9,6 +9,11 @@ import style from './ClassBuckets.module.css';
 import {Form} from 'react-bootstrap';
 import Tooltip from '@material-ui/core/Tooltip';
 import Highlight from 'react-highlighter';
+import { makeStyles } from '@material-ui/core/styles';
+import Paper from '@material-ui/core/Paper';
+import InputBase from '@material-ui/core/InputBase';
+import IconButton from '@material-ui/core/IconButton';
+import SearchIcon from '@material-ui/icons/Search';
 
 const PRIMARY_BUCKET = "req-group:";
 const grid = 8;
@@ -346,8 +351,26 @@ export default function ClassBuckets({API, setSelected, openClassModal, setGraph
     )
 }
 
+const useStyles = makeStyles((theme) => ({
+    root: {
+      padding: '2px 4px',
+      display: 'flex',
+      alignItems: 'center',
+      height:'40px'
+    },
+    input: {
+      marginLeft: theme.spacing(1),
+      flex: 1,
+    },
+    iconButton: {
+      padding: 5,
+    }
+  }));
+
 function BucketSearchColumn({bucketItems, missing, onClassClick, populatedBuckets, collapseOpen}){
     const [search, setSearch] = React.useState("");
+
+    const classes = useStyles();
 
     let filtered = React.useMemo(()=>
         bucketItems.map(({bucket, items})=>{
@@ -387,13 +410,17 @@ function BucketSearchColumn({bucketItems, missing, onClassClick, populatedBucket
     return (
         <>
             <div style={{padding:"5px", width:"90%", margin:"0 auto"}}>
-                <Form.Control
-                    type="text"
-                    placeholder="Search"
-                    name="search"
-                    value={search}
-                    onChange={e=>setSearch(e.target.value)}
-                />
+                <Paper component="form" className={classes.root}>
+                    <InputBase
+                        className={classes.input}
+                        onChange={e=>setSearch(e.target.value)}
+                        placeholder="Filter Classes"
+                        inputProps={{ 'aria-label': 'filter classes' }}
+                    />
+                    <IconButton className={classes.iconButton} aria-label="filter">
+                        <SearchIcon />
+                    </IconButton>
+                </Paper>
             </div>
             <hr/>
             <div style={scrollStyle}>
@@ -442,7 +469,7 @@ function BucketItem({bucket,items, missing, onClassClick, populatedBuckets, coll
                             <BiCaretRight onClick={()=>setCollapseOpen(!isCollapseOpen)} style={{margin:"auto 0", padding:"0px 2px", width:"20px"}}/>
                         }  
                         <h5 style={{display:"flex", width:"100%",justifyContent:((!items.length&&bucketMessage)||!isCompletable)?"space-between":"flex-start"}}>
-                            <Highlight search={searchText||""}>
+                            <Highlight search={searchText||""}  matchStyle={{padding:"0 0.1em", height: "1.15em", lineHeight: 1.15}}>
                                 {bucket.label}
                             </Highlight>
                             {items.length&&!bucketMessage?<>({items.reduce((total, e)=>total+(+e.credits || 0), 0)})</>:<></>}
@@ -535,7 +562,7 @@ function ClassItem({item, index, isMissing, onClassClick, populatedBuckets, sear
                         )}
                         onClick={()=>onClassClick(item.classId)}
                     >
-                        <Highlight search={searchText||""} className={style.className}>
+                        <Highlight search={searchText||""} className={style.className} matchStyle={{padding:"0 0.1em", height: "1.15em", lineHeight: 1.15}}>
                             {item.label}
                         </Highlight>
                         {isMissing?<BiError style={{float:"right"}}/>:<></>}
