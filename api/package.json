@@ -27,7 +27,7 @@
     "uuid": "^3.4.0",
     "wink-ner": "^2.1.0",
     "ws": "^7.4.1",
-    "xlsx": "^0.15.6"
+    "xlsx": "^0.17.0"
   },
   "devDependencies": {
     "nodemon": "^1.19.4"
